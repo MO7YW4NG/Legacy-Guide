@@ -19,7 +19,7 @@ class ChatRequest(BaseModel):
 reader = SimpleDirectoryReader(input_dir="./assets/")
 example_docs = reader.load_data()
 
-embed_model = HuggingFaceEmbedding(model_name="Qwen/Qwen3-Embedding-0.6B", show_progress_bar=True, embed_batch_size=4)
+embed_model = HuggingFaceEmbedding(model_name="Qwen/Qwen3-Embedding-0.6B", show_progress_bar=True, embed_batch_size=8)
 llm = GoogleGenAI(model="gemini-2.5-flash-preview-05-20", api_key=GEMINI_API_KEY)
 index = VectorStoreIndex.from_documents(example_docs, show_progress=True, embed_model=embed_model)
 query_engine = index.as_chat_engine(llm=llm, chat_mode=ChatMode.CONDENSE_PLUS_CONTEXT)
