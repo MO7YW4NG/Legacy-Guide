@@ -87,6 +87,7 @@ def parse_taoyuan_schedule(raw_text):
                 result[gregorian_date].append(time_str)
     return dict(result)
 
+"""查詢高雄市火化場各時段可預約火化時段。"""
 @router.get("/crawl_kaohsiung_info", response_class=JSONResponse)
 def crawl_ks_info(start_date: str = Query(default="2025-06-16"), end_date: str = Query(default="2025-06-18")):
     
@@ -115,6 +116,7 @@ def crawl_ks_info(start_date: str = Query(default="2025-06-16"), end_date: str =
     finally:
         driver.quit()
 
+"""查詢桃園市火化場各時段可預約火化時段。"""
 @router.get("/crawl_taoyuan_info", response_class=JSONResponse)
 def crawl_ty_info(start_date: str = Query(default="2025-06-16"), end_date: str = Query(default="2025-06-18")):
     """

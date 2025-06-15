@@ -9,6 +9,7 @@ import re
 router = APIRouter()
 cc = OpenCC('s2t')  # 簡體轉繁體
 
+"""取得指定陽曆日期的詳細農曆資訊。"""
 @router.get("/lunar", response_model=LunarInfo)
 def get_lunar_endpoint(date: str = Query(..., description="格式：YYYY-MM-DD")) -> LunarInfo:
     return get_lunar_info(date)
@@ -37,6 +38,7 @@ def get_lunar_info(date: str) -> LunarInfo:
         生肖=cc.convert(lunar.getYearShengXiao()),
     )
 
+"""根據亡者歿日計算相關祭祀日期（頭七、百日、對年等）。"""
 @router.get("/die", response_model=RitualDates)
 def ritual_dates(
     date: str = Query(..., description="格式：YYYY-MM-DD"),
