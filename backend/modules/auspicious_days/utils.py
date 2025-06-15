@@ -4,7 +4,6 @@
 """
 
 from typing import List, Tuple
-from datetime import date
 from ..models import GanZhi, Date   
 
 # 天干相沖對應表

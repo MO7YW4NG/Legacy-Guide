@@ -58,5 +58,5 @@ class DateAnalysis(BaseModel):
 class AuspiciousDayResponse(BaseModel):
     查詢條件: AuspiciousDayRequest
     推薦日期: List[DateAnalysis]
-    總體建議: str
+    # 總體建議: str
     查詢時間: datetime

@@ -15,10 +15,8 @@ from ..models import (
     Date
 )
 from .utils import (
-    get_heavenly_stem_conflicts,
     get_earthly_branch_conflicts,
     zodiac_to_earthly_branch,
-    get_year_stem_branch,
     is_forbidden_day,
     calculate_recommendation_level
 )
@@ -158,8 +156,7 @@ class AuspiciousDayService:
         
         # 添加其他注意事項
         for conflict in conflicts:
-            if conflict.影響程度 in ["中等", "輕微"]:
-                notes.append(conflict.說明)
+            notes.append(conflict.說明)
         
         return notes
     
@@ -171,33 +168,27 @@ class AuspiciousDayService:
         current_date = request.查詢起始日期
         while current_date <= request.查詢結束日期:
             analysis = await self.analyze_date(current_date, request)
-            if analysis.推薦等級 in ["極佳", "適宜"]:
+            if analysis.推薦等級 in ["極佳"]:
                 recommended_dates.append(analysis)
             current_date = current_date + timedelta(days=1)
         
         # 按推薦等級排序
-        recommended_dates.sort(key=lambda x: {
-            "極佳": 0,
-            "適宜": 1,
-            "普通": 2,
-            "不宜": 3,
-            "禁用": 4
-        }[x.推薦等級])
+        recommended_dates.sort(key=lambda x: x.日期)
         
         return AuspiciousDayResponse(
             查詢條件=request,
             推薦日期=recommended_dates,
-            總體建議=self.generate_overall_advice(recommended_dates),
+            # 總體建議=self.generate_overall_advice(recommended_dates),
             查詢時間=datetime.now()
         )
     
-    def generate_overall_advice(self, recommended_dates: List[DateAnalysis]) -> str:
-        """生成總體建議"""
-        if not recommended_dates:
-            return "在查詢日期範圍內未找到適合的日期，建議擴大查詢範圍或調整條件"
+    # def generate_overall_advice(self, recommended_dates: List[DateAnalysis]) -> str:
+    #     """生成總體建議"""
+    #     if not recommended_dates:
+    #         return "在查詢日期範圍內未找到適合的日期，建議擴大查詢範圍或調整條件"
         
-        best_dates = [d for d in recommended_dates if d.推薦等級 == "極佳"]
-        if best_dates:
-            return f"找到{len(best_dates)}個極佳日期，建議優先考慮這些日期"
-        else:
-            return f"找到{len(recommended_dates)}個適宜日期，請參考具體建議選擇" 
+    #     best_dates = [d for d in recommended_dates if d.推薦等級 == "極佳"]
+    #     if best_dates:
+    #         return f"找到{len(best_dates)}個極佳日期，建議優先考慮這些日期"
+    #     else:
+    #         return f"找到{len(recommended_dates)}個適宜日期，請參考具體建議選擇" 

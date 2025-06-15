@@ -146,7 +146,7 @@ def lunar_str_to_digits(lunar_str: str) -> str:
         "六": "6", "七": "7", "八": "8", "九": "9"
     }
     cn_month_day_map = {
-        "正": "1", "十": "10", "冬": "11", "腊": "12",
+        "正": "1", "十": "10", "冬": "11", "臘": "12",
         "廿": "20", "卅": "30"
     }
 
@@ -170,6 +170,7 @@ def lunar_str_to_digits(lunar_str: str) -> str:
             month_str = cn_num_map.get(raw_month_cn, "")
         if month_str and len(month_str) == 1:
             month_str = "0" + month_str
+
 
     # 日
     day_match = re.search(r"月(.+)", lunar_str)
@@ -201,8 +202,5 @@ def lunar_str_to_digits(lunar_str: str) -> str:
                 day_str = ""
     else:
         day_str = ""
-
-    if not (year_str and month_str and day_str):
-        return f"{year_str}-{month_str}-{day_str}"
 
     return f"{year_str}-{month_str}-{day_str}"
