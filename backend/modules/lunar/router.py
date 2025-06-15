@@ -164,7 +164,6 @@ def lunar_str_to_digits(lunar_str: str) -> str:
     month_match = re.search(r"年(閏)?(.*?)月", lunar_str)
     if month_match:
         raw_month_cn = month_match.group(2)
-        print(raw_month_cn)
         if raw_month_cn in cn_month_day_map:
             month_str = cn_month_day_map[raw_month_cn]
         else:
