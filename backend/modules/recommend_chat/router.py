@@ -29,12 +29,12 @@ class ChatRequest(BaseModel):
 def initialize_rag_engine():
     try:
         # 檢查 assets 目錄是否存在
-        assets_path = Path("./assets/")
+        assets_path = Path("./backend/assets/")
         if not assets_path.exists():
             raise FileNotFoundError(f"Assets directory not found at {assets_path}")
 
         # 使用 SimpleDirectoryReader 載入文件
-        reader = SimpleDirectoryReader(input_dir="./assets/")
+        reader = SimpleDirectoryReader(input_dir="./backend/assets/")
         example_docs = reader.load_data()
         
         if not example_docs:
