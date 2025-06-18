@@ -15,7 +15,6 @@ app = FastAPI(title="LegacyGuide API")
 
 UPLOAD_STATIC_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 app.mount("/static", StaticFiles(directory=UPLOAD_STATIC_DIR), name="static")
-app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
 
 
