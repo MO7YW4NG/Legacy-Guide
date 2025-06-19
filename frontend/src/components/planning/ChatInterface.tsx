@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Video, VideoOff, Mic, MicOff } from "lucide-react";
+import { Send, Video, VideoOff, Mic, MicOff, Loader2 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { cn, getBackendUrl } from "@/lib/utils";
 
 interface Message {
   id: string;
@@ -28,19 +31,27 @@ const ChatInterface = () => {
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // 模擬AI說話動畫
-  useState(() => {
+  useEffect(() => {
     if (isVideoOn) {
       const interval = setInterval(() => {
         setIsAISpeaking(prev => !prev);
       }, 2000);
       return () => clearInterval(interval);
     }
-  });
+  }, [isVideoOn]);
 
   const handleSendMessage = async () => {
-    if (inputMessage.trim()) {
+    if (inputMessage.trim() && !loading) {
       const newMessage: Message = {
         id: Date.now().toString(),
         content: inputMessage,
@@ -52,7 +63,7 @@ const ChatInterface = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('http://localhost:8000/api/chat/rag', {
+        const res = await fetch(`${getBackendUrl()}/api/rag2`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: inputMessage })
@@ -75,18 +86,10 @@ const ChatInterface = () => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleSendMessage();
     }
-  };
-
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    // 這裡可以添加語音識別功能
-  };
-
-  const toggleVideo = () => {
-    setIsVideoOn(!isVideoOn);
   };
 
   return (
@@ -97,7 +100,7 @@ const ChatInterface = () => {
           <Button
             variant={isVideoOn ? "default" : "outline"}
             size="sm"
-            onClick={toggleVideo}
+            onClick={() => setIsVideoOn(!isVideoOn)}
             className="flex items-center gap-2"
           >
             {isVideoOn ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
@@ -106,8 +109,7 @@ const ChatInterface = () => {
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
-        {/* 視訊區域 */}
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {isVideoOn && (
           <div className="border-b border-border p-6 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
             <div className="text-center">
@@ -150,52 +152,57 @@ const ChatInterface = () => {
           </div>
         )}
 
-        {/* 聊天記錄 */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${message.isUser ? 'justify-end' : 'justify-start'}`}
-              >
-                {!message.isUser && (
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                      AI
-                    </AvatarFallback>
-                  </Avatar>
-                )}
+        <div className="flex-1 min-h-0 p-4">
+          <ScrollArea className="h-full">
+            <div className="space-y-4 pr-4">
+              {messages.map((message) => (
                 <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
-                    message.isUser
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-foreground'
-                  }`}
+                  key={message.id}
+                  className={`flex gap-3 ${message.isUser ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p className="text-sm font-light">{message.content}</p>
-                  <span className="text-xs opacity-70 mt-1 block">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  {!message.isUser && (
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        AI
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div
+                    className={`max-w-[70%] rounded-lg p-3 ${
+                      message.isUser
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground'
+                    }`}
+                  >
+                    <div className="text-sm font-light prose dark:prose-invert max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                    <span className="text-xs opacity-70 mt-1 block">
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  {message.isUser && (
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
+                        您
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
-                {message.isUser && (
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
-                      您
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
+              ))}
+              <div ref={scrollRef} />
+            </div>
+          </ScrollArea>
+        </div>
 
-        {/* 輸入區域 */}
         <div className="border-t border-border p-4">
           <div className="flex gap-2">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="輸入您的問題..."
               className="flex-1"
               disabled={loading}
@@ -203,18 +210,32 @@ const ChatInterface = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={toggleRecording}
+              onClick={() => setIsRecording(!isRecording)}
               className={isRecording ? "bg-red-100 text-red-600" : ""}
+              disabled={loading}
             >
               {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
-            <Button onClick={handleSendMessage} size="icon" disabled={loading}>
-              <Send className="w-4 h-4" />
+            <Button 
+              onClick={handleSendMessage} 
+              size="icon" 
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </Button>
           </div>
+          {error && (
+            <div className="text-red-500 text-xs mt-2 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-red-500 rounded-full"></span>
+              {error}
+            </div>
+          )}
         </div>
       </CardContent>
-      {error && <div className="text-red-500 text-xs mt-2">{error}</div>}
     </Card>
   );
 };

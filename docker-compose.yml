@@ -35,6 +35,8 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     ports:
       - "8080:8080"
     # depends_on:
