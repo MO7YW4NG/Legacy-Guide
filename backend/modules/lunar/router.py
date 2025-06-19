@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from lunar_python import Solar, Lunar
 from opencc import OpenCC
 from modules.models import GanZhi, LunarInfo, Date, RitualDates
 import re
+from datetime import datetime, timedelta
+from ics import Calendar, Event
 
 
 router = APIRouter()
@@ -103,6 +105,42 @@ def ritual_dates(
         return JSONResponse(status_code=422, content={"error": str(e)})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"內部錯誤: {e}"})
+
+@router.get("/export/ritual_dates.ics")
+def export_ritual_dates_ics(
+    date: str = Query(..., description="格式：YYYY-MM-DD"),
+    traditional: bool = Query(True, description="作七模式: 是否為traditional (預設為True)"),
+):
+    """
+    計算所有祭祀日期並匯出為 .ics 檔案。
+    """
+    try:
+        # 取得祭祀日期
+        ritual_dates_response = ritual_dates(date, traditional)
+        if isinstance(ritual_dates_response, JSONResponse):
+            return ritual_dates_response
+
+        # 建立日曆
+        cal = Calendar()
+        for name, date_info in ritual_dates_response:
+            if date_info and date_info.solar:
+                event = Event()
+                event.name = f"祭祀日：{name}"
+                # 將日期設為全天事件
+                event.begin = date_info.solar
+                event.make_all_day()
+                event.description = f"農曆日期：{date_info.lunar}"
+                cal.events.add(event)
+
+        # 產生 .ics 內容並回傳
+        ics_content = str(cal)
+        return Response(
+            content=ics_content,
+            media_type="text/calendar",
+            headers={"Content-Disposition": f"attachment; filename=ritual_dates.ics"}
+        )
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"ICS 檔案產生失敗: {e}"})
 
 def get_anniversary_date(death_solar_date: str, years_to_add: int):
     """

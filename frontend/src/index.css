@@ -1,0 +1,209 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+
+@layer base {
+  :root {
+    /* Custom color palette - minimalist approach */
+    --vi-primary: #9A0028;
+    --vi-secondary: #A49889;
+    --vi-golden: #C29A64;
+    --vi-light: #F5F5F5;
+    --vi-dark: #0A0A14;
+    --vi-white: #FFFFFF;
+    --is-success: #4F8B8A;
+    --is-warning: #C29A64;
+    --is-danger: #c70506;
+
+    /* Shadcn color mappings using minimalist palette */
+    --background: 0 0% 96%; /* vi-light */
+    --foreground: 240 38% 6%; /* vi-dark */
+
+    --card: 0 0% 100%; /* vi-white */
+    --card-foreground: 240 38% 6%; /* vi-dark */
+
+    --popover: 0 0% 100%; /* vi-white */
+    --popover-foreground: 240 38% 6%; /* vi-dark */
+
+    --primary: 343 100% 30%; /* vi-primary */
+    --primary-foreground: 0 0% 100%; /* vi-white */
+
+    --secondary: 38 9% 59%; /* vi-secondary */
+    --secondary-foreground: 240 38% 6%; /* vi-dark */
+
+    --muted: 0 0% 96%; /* vi-light */
+    --muted-foreground: 38 9% 45%; /* darker vi-secondary */
+
+    --accent: 33 44% 58%; /* vi-golden */
+    --accent-foreground: 240 38% 6%; /* vi-dark */
+
+    --destructive: 360 96% 40%; /* is-danger */
+    --destructive-foreground: 0 0% 100%; /* vi-white */
+
+    --border: 38 9% 88%; /* lighter vi-secondary */
+    --input: 38 9% 88%; /* lighter vi-secondary */
+    --ring: 343 100% 30%; /* vi-primary */
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 96%;
+    --sidebar-foreground: 240 38% 6%;
+    --sidebar-primary: 343 100% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 33 44% 58%;
+    --sidebar-accent-foreground: 240 38% 6%;
+    --sidebar-border: 38 9% 88%;
+    --sidebar-ring: 343 100% 30%;
+  }
+
+  .dark {
+    --background: 240 38% 6%; /* vi-dark */
+    --foreground: 0 0% 96%; /* vi-light */
+
+    --card: 240 38% 6%; /* vi-dark */
+    --card-foreground: 0 0% 96%; /* vi-light */
+
+    --popover: 240 38% 6%; /* vi-dark */
+    --popover-foreground: 0 0% 96%; /* vi-light */
+
+    --primary: 343 100% 30%; /* vi-primary */
+    --primary-foreground: 0 0% 100%; /* vi-white */
+
+    --secondary: 240 38% 12%; /* lighter vi-dark */
+    --secondary-foreground: 0 0% 96%; /* vi-light */
+
+    --muted: 240 38% 12%; /* lighter vi-dark */
+    --muted-foreground: 38 9% 59%; /* vi-secondary */
+
+    --accent: 33 44% 58%; /* vi-golden */
+    --accent-foreground: 0 0% 96%; /* vi-light */
+
+    --destructive: 360 96% 40%; /* is-danger */
+    --destructive-foreground: 0 0% 100%; /* vi-white */
+
+    --border: 240 38% 12%; /* lighter vi-dark */
+    --input: 240 38% 12%; /* lighter vi-dark */
+    --ring: 343 100% 30%; /* vi-primary */
+
+    --sidebar-background: 240 38% 6%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 343 100% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 33 44% 58%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 240 38% 12%;
+    --sidebar-ring: 343 100% 30%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+  }
+}
+
+/* Minimalist utility classes */
+@layer utilities {
+  .vi-primary {
+    color: var(--vi-primary);
+  }
+  
+  .vi-secondary {
+    color: var(--vi-secondary);
+  }
+  
+  .vi-golden {
+    color: var(--vi-golden);
+  }
+  
+  .vi-light {
+    color: var(--vi-light);
+  }
+  
+  .vi-dark {
+    color: var(--vi-dark);
+  }
+  
+  .bg-vi-primary {
+    background-color: var(--vi-primary);
+  }
+  
+  .bg-vi-secondary {
+    background-color: var(--vi-secondary);
+  }
+  
+  .bg-vi-golden {
+    background-color: var(--vi-golden);
+  }
+  
+  .bg-vi-light {
+    background-color: var(--vi-light);
+  }
+  
+  .bg-vi-dark {
+    background-color: var(--vi-dark);
+  }
+  
+  .bg-is-success {
+    background-color: var(--is-success);
+  }
+  
+  .bg-is-warning {
+    background-color: var(--is-warning);
+  }
+  
+  .bg-is-danger {
+    background-color: var(--is-danger);
+  }
+  
+  .text-is-success {
+    color: var(--is-success);
+  }
+  
+  .text-is-warning {
+    color: var(--is-warning);
+  }
+  
+  .text-is-danger {
+    color: var(--is-danger);
+  }
+  
+  .border-vi-primary {
+    border-color: var(--vi-primary);
+  }
+  
+  .border-vi-secondary {
+    border-color: var(--vi-secondary);
+  }
+  
+  .border-vi-golden {
+    border-color: var(--vi-golden);
+  }
+  
+  /* Minimalist shadows */
+  .shadow-minimal {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .shadow-minimal-lg {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Clean spacing */
+  .space-minimal > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-minimal-sm > * + * {
+    margin-top: 0.5rem;
+  }
+}

@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir uv
 
 # Copy requirements first to leverage Docker cache
 COPY --chown=appuser:appuser requirements.txt .
-RUN uv pip install --no-cache -r requirements.txt
+RUN uv pip install --no-cache --system -r requirements.txt
 
 # Copy the rest of the application
 COPY --chown=appuser:appuser . .

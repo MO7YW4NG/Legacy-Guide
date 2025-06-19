@@ -95,7 +95,7 @@ def crawl_ks_info(start_date: str = Query(default="2025-06-16"), end_date: str =
     end_dt = datetime.strptime(end_date, "%Y-%m-%d")
 
     delta_days = (end_dt - start_dt).days + 1
-    url = f"https://mort.kcg.gov.tw/04/P04S03A-view.aspx?mp=Fmok&Day={start_dt.year - 1911}{start_dt.strftime("%m%d")}&Days={delta_days}"
+    url = f"https://mort.kcg.gov.tw/04/P04S03A-view.aspx?mp=Fmok&Day={start_dt.year - 1911}{start_dt.strftime('%m%d')}&Days={delta_days}"
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")

@@ -1,30 +1,15 @@
-FROM python:3.12-slim-bookworm
-
+# Stage 1: Build
+FROM node:20-alpine AS builder
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
 
-# Install system dependencies and security updates
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && useradd -m -u 1000 appuser \
-    && chown -R appuser:appuser /app
-
-# Install uv
-RUN pip install --no-cache-dir uv
-
-# Copy requirements first to leverage Docker cache
-COPY --chown=appuser:appuser requirements.txt .
-RUN uv pip install --no-cache -r requirements.txt
-
-# Copy the rest of the application
-COPY --chown=appuser:appuser . .
-
-# Switch to non-root user
-USER appuser
-
-# Expose the port the app runs on
-EXPOSE 7860
-
-# Command to run the application
-CMD ["python", "app.py"]
+# Stage 2: Serve
+FROM node:20-alpine AS runner
+WORKDIR /app
+RUN npm install -g serve
+COPY --from=builder /app/dist ./dist
+EXPOSE 8080
+CMD ["serve", "-s", "dist", "-l", "8080"]
