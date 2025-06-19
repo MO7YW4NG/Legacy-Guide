@@ -1,4 +1,6 @@
-# Byte-compiled / optimized / DLL files
+
+
+embedding-datas# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -192,3 +194,5 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+embedding-data

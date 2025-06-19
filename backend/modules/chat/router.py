@@ -5,7 +5,7 @@ from pathlib import Path
 import logging
 from llama_index.core import Document, VectorStoreIndex, SimpleDirectoryReader
 from llama_index.core.chat_engine.types import ChatMode
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from llama_index.llms.google_genai import GoogleGenAI
 from dotenv import load_dotenv
 from llama_index.core.prompts import PromptTemplate
@@ -29,22 +29,22 @@ class ChatRequest(BaseModel):
 def initialize_rag_engine():
     try:
         # 檢查 assets 目錄是否存在
-        assets_path = Path("./backend/assets/")
+        assets_path = Path("./assets/")
         if not assets_path.exists():
             raise FileNotFoundError(f"Assets directory not found at {assets_path}")
 
         # 使用 SimpleDirectoryReader 載入文件
-        reader = SimpleDirectoryReader(input_dir="./backend/assets/")
+        reader = SimpleDirectoryReader(input_dir="./assets/")
         example_docs = reader.load_data()
         
         if not example_docs:
             raise ValueError("No documents found in assets directory")
 
         # 初始化嵌入模型
-        embed_model = HuggingFaceEmbedding(
-            model_name="Qwen/Qwen3-Embedding-0.6B",
-            show_progress_bar=True,
-            embed_batch_size=8
+        embed_model = TextEmbeddingsInference(
+            model_name=os.getenv("EMBEDDING_MODEL_ID"),
+            base_url="http://embeddings-inference:80",
+            embed_batch_size=32
         )
 
         # 初始化 LLM

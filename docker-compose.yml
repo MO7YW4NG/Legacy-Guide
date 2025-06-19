@@ -6,14 +6,36 @@ services:
       - "8000:8000"
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - EMBEDDING_MODEL_ID=${EMBEDDING_MODEL_ID}
     volumes:
       - ./backend:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
+  
+  embeddings-inference:
+    image: ghcr.io/huggingface/text-embeddings-inference:1.7
+    container_name: embeddings-inference
+    ports:
+      - "80:80"
+    volumes:
+      - ./embedding-data:/data
+    environment:
+      - RUST_BACKTRACE=full
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: "all"
+              driver: "nvidia"
+    command: ["--model-id", "${EMBEDDING_MODEL_ID}", "--max-client-batch-size", "128"]
+  
   frontend:
     container_name: frontend
     build: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     ports:
       - "8080:8080"
-    depends_on:
-      - backend
+    # depends_on:
+    #   - backend

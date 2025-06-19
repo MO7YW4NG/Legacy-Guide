@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 
 from modules.lunar.router import router as lunar_router
-# from modules.chat.router import router as chat_router
+from modules.chat.router import router as chat_router
 # from modules.recommend_chat.router import router as recommend_router
 from modules.crawler.router import router as crawler_router
 from modules.auspicious_days.router import router as auspicious_days_router
@@ -12,6 +13,15 @@ from modules.urn.router import router as urn_router
 
 
 app = FastAPI(title="LegacyGuide API")
+
+# 加入 CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8080"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 UPLOAD_STATIC_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 app.mount("/static", StaticFiles(directory=UPLOAD_STATIC_DIR), name="static")

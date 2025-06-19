@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -14,19 +13,27 @@ const LunarCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isLunar, setIsLunar] = useState(false);
 
-  // 模擬農民曆資料
-  const lunarData = {
-    lunarDate: "甲辰年 十一月 初八",
-    solarTerm: "大雪",
-    suitable: ["祭祀", "祈福", "求嗣", "開光", "出行"],
-    unsuitable: ["嫁娶", "動土", "開市", "安葬"],
-    conflict: "沖虎(戊寅)煞南",
-    direction: {
-      god: "東北",
-      wealth: "正東",
-      fortune: "西南"
-    }
-  };
+  // API 農民曆資料
+  const [lunarData, setLunarData] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    setLoading(true);
+    setError(null);
+    const dateStr = selectedDate.toISOString().slice(0, 10);
+    fetch(`http://localhost:8000/api/lunar?date=${dateStr}`)
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(data => {
+        setLunarData(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('查詢失敗，請稍後再試');
+        setLoading(false);
+      });
+  }, [selectedDate]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -60,9 +67,11 @@ const LunarCalendar = () => {
             <p className="text-center font-medium text-foreground">
               選擇日期：{format(selectedDate, "yyyy年MM月dd日")}
             </p>
-            {isLunar && (
+            {loading && <p className="text-center text-muted-foreground mt-1">查詢中...</p>}
+            {error && <p className="text-center text-destructive mt-1">{error}</p>}
+            {lunarData && (
               <p className="text-center text-muted-foreground mt-1">
-                農曆：{lunarData.lunarDate}
+                農曆：{lunarData.農曆}
               </p>
             )}
           </div>
@@ -80,16 +89,16 @@ const LunarCalendar = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h4 className="font-medium text-foreground mb-1">農曆日期</h4>
-                <p className="text-muted-foreground">{lunarData.lunarDate}</p>
+                <p className="text-muted-foreground">{lunarData ? lunarData.農曆 : '-'}</p>
               </div>
               <div>
                 <h4 className="font-medium text-foreground mb-1">節氣</h4>
-                <p className="text-muted-foreground">{lunarData.solarTerm}</p>
+                <p className="text-muted-foreground">{lunarData ? lunarData.節氣 : '-'}</p>
               </div>
             </div>
             <div>
               <h4 className="font-medium text-foreground mb-1">沖煞</h4>
-              <p className="text-destructive">{lunarData.conflict}</p>
+              <p className="text-destructive">{lunarData ? lunarData.沖煞 : '-'}</p>
             </div>
           </CardContent>
         </Card>
@@ -106,11 +115,11 @@ const LunarCalendar = () => {
                 宜
               </h4>
               <div className="flex flex-wrap gap-2">
-                {lunarData.suitable.map((item, index) => (
+                {lunarData && lunarData.宜 && lunarData.宜.length > 0 ? lunarData.宜.map((item: string, index: number) => (
                   <span key={index} className="px-3 py-1 bg-is-success/10 text-is-success rounded-full text-sm">
                     {item}
                   </span>
-                ))}
+                )) : <span className="text-muted-foreground">-</span>}
               </div>
             </div>
             <div>
@@ -119,17 +128,19 @@ const LunarCalendar = () => {
                 忌
               </h4>
               <div className="flex flex-wrap gap-2">
-                {lunarData.unsuitable.map((item, index) => (
+                {lunarData && lunarData.忌 && lunarData.忌.length > 0 ? lunarData.忌.map((item: string, index: number) => (
                   <span key={index} className="px-3 py-1 bg-destructive/10 text-destructive rounded-full text-sm">
                     {item}
                   </span>
-                ))}
+                )) : <span className="text-muted-foreground">-</span>}
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* 方位資訊 */}
+        {/* 目前 API 沒有 direction，暫時隱藏這區塊 */}
+        {/*
         <Card>
           <CardHeader>
             <CardTitle className="text-card-foreground">吉方資訊</CardTitle>
@@ -138,19 +149,20 @@ const LunarCalendar = () => {
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <h5 className="font-medium text-primary mb-1">喜神方位</h5>
-                <p className="text-primary/80">{lunarData.direction.god}</p>
+                <p className="text-primary/80">{{lunarData.direction.god}}</p>
               </div>
               <div className="p-3 bg-accent/10 rounded-lg">
                 <h5 className="font-medium text-accent-foreground mb-1">財神方位</h5>
-                <p className="text-accent-foreground/80">{lunarData.direction.wealth}</p>
+                <p className="text-accent-foreground/80">{{lunarData.direction.wealth}}</p>
               </div>
               <div className="p-3 bg-is-success/10 rounded-lg">
                 <h5 className="font-medium text-is-success mb-1">福神方位</h5>
-                <p className="text-is-success/80">{lunarData.direction.fortune}</p>
+                <p className="text-is-success/80">{{lunarData.direction.fortune}}</p>
               </div>
             </div>
           </CardContent>
         </Card>
+        */}
       </div>
     </div>
   );

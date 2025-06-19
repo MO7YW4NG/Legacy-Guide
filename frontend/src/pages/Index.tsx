@@ -1,14 +1,33 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Heart, Users, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
 
+  // Backend health check 狀態
+  const [apiStatus, setApiStatus] = useState<'loading'|'ok'|'error'>('loading');
+
+  useEffect(() => {
+    fetch("http://localhost:8000/health")
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => {
+        if (data.status === 'healthy') setApiStatus('ok');
+        else setApiStatus('error');
+      })
+      .catch(() => setApiStatus('error'));
+  }, []);
+
   return (
     <>
+      {/* Backend API 狀態顯示 */}
+      <div className="w-full text-center py-2">
+        {apiStatus === 'loading' && <span className="text-muted-foreground">API 狀態檢查中...</span>}
+        {apiStatus === 'ok' && <span className="text-green-600">API 連線正常</span>}
+        {apiStatus === 'error' && <span className="text-red-600">API 連線失敗</span>}
+      </div>
       {/* 主要內容 */}
       <div className="container mx-auto px-4">
         {/* 歡迎區塊 */}

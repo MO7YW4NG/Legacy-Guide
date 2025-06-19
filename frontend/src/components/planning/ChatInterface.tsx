@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,8 @@ const ChatInterface = () => {
   const [isVideoOn, setIsVideoOn] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // 模擬AI說話動畫
   useState(() => {
@@ -38,7 +39,7 @@ const ChatInterface = () => {
     }
   });
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (inputMessage.trim()) {
       const newMessage: Message = {
         id: Date.now().toString(),
@@ -46,20 +47,30 @@ const ChatInterface = () => {
         isUser: true,
         timestamp: new Date()
       };
-      
       setMessages(prev => [...prev, newMessage]);
       setInputMessage('');
-      
-      // 模擬AI回覆
-      setTimeout(() => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('http://localhost:8000/api/chat/rag', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: inputMessage })
+        });
+        if (!res.ok) throw new Error('AI 回覆失敗');
+        const data = await res.json();
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
-          content: '謝謝您的詢問，我會根據您的需求提供專業建議。請您填寫右側的表單，我可以為您制定更詳細的規劃。',
+          content: data.answer,
           isUser: false,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+      } catch (e) {
+        setError('AI 回覆失敗，請稍後再試');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -187,6 +198,7 @@ const ChatInterface = () => {
               onKeyPress={handleKeyPress}
               placeholder="輸入您的問題..."
               className="flex-1"
+              disabled={loading}
             />
             <Button
               variant="outline"
@@ -196,12 +208,13 @@ const ChatInterface = () => {
             >
               {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
-            <Button onClick={handleSendMessage} size="icon">
+            <Button onClick={handleSendMessage} size="icon" disabled={loading}>
               <Send className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </CardContent>
+      {error && <div className="text-red-500 text-xs mt-2">{error}</div>}
     </Card>
   );
 };
