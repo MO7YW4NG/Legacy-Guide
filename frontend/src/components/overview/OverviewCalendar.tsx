@@ -9,6 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar as CalendarIcon, Star, Heart, Flame } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface DayData {
   date: Date;
@@ -18,6 +19,7 @@ interface DayData {
   badFor?: string;
   conflicts?: string;
   cremationStatus: "額滿" | "尚有名額";
+  cremationSlots?: string[];
 }
 
 interface OverviewCalendarProps {
@@ -31,13 +33,31 @@ interface OverviewCalendarProps {
     conflicts: string;
   }>;
   city?: string;
+  selectedCustomDates: { [key: string]: string };
+  onSelectedCustomDatesChange: (dates: { [key: string]: string }) => void;
+  onCalendarMonthChange?: (month: Date) => void;
 }
 
-export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays, city }: OverviewCalendarProps) {
+export function OverviewCalendar({ 
+  deathDate, 
+  ritualDates, 
+  auspiciousDays, 
+  city,
+  selectedCustomDates,
+  onSelectedCustomDatesChange,
+  onCalendarMonthChange
+}: OverviewCalendarProps) {
   const [month, setMonth] = useState(deathDate);
   const [selectedData, setSelectedData] = useState<DayData | null>(null);
   const [cremationAvailability, setCremationAvailability] = useState<{ [key: string]: string[] }>({});
   const [isFetchingCremation, setIsFetchingCremation] = useState(false);
+
+  const handleInternalMonthChange = (newMonth: Date) => {
+    setMonth(newMonth);
+    if (onCalendarMonthChange) {
+      onCalendarMonthChange(newMonth);
+    }
+  };
 
   useEffect(() => {
     const fetchCremationData = async () => {
@@ -82,9 +102,12 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays, city 
       const auspicious = auspiciousDays.find(a => isSameDay(a.date, day));
 
       let cremationStatus: "額滿" | "尚有名額" = "額滿";
+      let cremationSlots: string[] | undefined = undefined;
+      
       if (city && (city === "高雄市" || city === "桃園市")) {
         if (cremationAvailability[dateStr] && cremationAvailability[dateStr].length > 0) {
           cremationStatus = "尚有名額";
+          cremationSlots = cremationAvailability[dateStr];
         }
       } else {
         // Mock cremation status for other cities
@@ -106,6 +129,7 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays, city 
         badFor: auspicious?.badFor,
         conflicts: auspicious?.conflicts,
         cremationStatus: cremationStatus,
+        cremationSlots: cremationSlots,
       });
     }
     return dataMap;
@@ -121,25 +145,38 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays, city 
     } else {
         const dateStr = format(date, "yyyy-MM-dd");
         let cremationStatus: "額滿" | "尚有名額" = "額滿";
+        let cremationSlots: string[] | undefined = undefined;
         if (cremationAvailability[dateStr] && cremationAvailability[dateStr].length > 0) {
           cremationStatus = "尚有名額";
+          cremationSlots = cremationAvailability[dateStr];
         }
         // Create default data for any clicked date outside the pre-generated range
         setSelectedData({
             date: date,
             cremationStatus: cremationStatus,
+            cremationSlots: cremationSlots,
         });
     }
   };
 
-  const handleExportDate = () => {
+  const handleToggleExportSelection = () => {
     if (!selectedData) return;
-    const selectedDateStr = format(selectedData.date, "yyyy-MM-dd");
-    const deathDateStr = format(deathDate, "yyyy-MM-dd");
     
-    const url = `${getBackendUrl()}/lunar/export/ritual_dates.ics?date=${deathDateStr}&selected_date=${selectedDateStr}`;
-    window.location.href = url;
-    
+    const newSelectedCustomDates = { ...selectedCustomDates };
+    const dateStr = format(selectedData.date, "yyyy-MM-dd");
+
+    const existingKey = Object.keys(newSelectedCustomDates).find(
+      key => newSelectedCustomDates[key] === dateStr
+    );
+
+    if (existingKey) {
+      delete newSelectedCustomDates[existingKey];
+    } else {
+      const auspiciousCount = Object.keys(newSelectedCustomDates).filter(k => k.startsWith('吉日')).length;
+      const newKey = `吉日${auspiciousCount + 1}`;
+      newSelectedCustomDates[newKey] = dateStr;
+    }
+    onSelectedCustomDatesChange(newSelectedCustomDates);
     setSelectedData(null);
   };
 
@@ -167,6 +204,14 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays, city 
     );
   };
 
+  const allSelectedDates = useMemo(() => {
+    const ritualDateStrings = Object.values(ritualDates).map(d => format(d, "yyyy-MM-dd"));
+    const customDateStrings = Object.values(selectedCustomDates);
+    const combined = [...ritualDateStrings, ...customDateStrings];
+    return combined.map(ds => new Date(ds));
+  }, [ritualDates, selectedCustomDates]);
+
+
   return (
     <>
       <Card className="w-full">
@@ -181,9 +226,17 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays, city 
             mode="single"
             onSelect={handleDateSelect}
             month={month}
-            onMonthChange={setMonth}
+            onMonthChange={handleInternalMonthChange}
             components={{ DayContent }}
             showOutsideDays={false}
+            modifiers={{ 
+              highlighted: allSelectedDates,
+              ritual: Object.values(ritualDates),
+            }}
+            modifiersClassNames={{
+              highlighted: 'bg-primary/20',
+              ritual: 'ring-2 ring-destructive/50',
+            }}
             classNames={{
               head_row: "flex w-full",
               head_cell: "text-muted-foreground rounded-md font-normal text-[0.8rem] text-center flex-1",
@@ -229,12 +282,26 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays, city 
                     )}
                     <div className="p-4 bg-slate-50/50 border-l-4 border-slate-400 rounded">
                         <h3 className="font-semibold flex items-center mb-2"><Flame className="w-4 h-4 mr-2 text-orange-500"/>火化時程</h3>
-                        <p>狀態: {selectedData.cremationStatus}</p>
+                        <p className="mb-2">狀態: {selectedData.cremationStatus}</p>
+                        {selectedData.cremationStatus === '尚有名額' && selectedData.cremationSlots && selectedData.cremationSlots.length > 0 && (
+                            <div className="mt-2">
+                                <p className="font-medium text-sm mb-2">可預約時段：</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedData.cremationSlots.map(slot => (
+                                        <Badge key={slot} variant="secondary" className="text-sm font-normal">{slot}</Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setSelectedData(null)}>關閉</Button>
-                    <Button className="bg-vi-dark hover:opacity-90" onClick={handleExportDate}>選擇此日期</Button>
+                    {!selectedData.ritualName && (
+                      <Button className="bg-vi-dark hover:opacity-90" onClick={handleToggleExportSelection}>
+                        {Object.values(selectedCustomDates).includes(format(selectedData.date, "yyyy-MM-dd")) ? '從自選列表移除' : '新增至自選列表'}
+                      </Button>
+                    )}
                 </DialogFooter>
             </DialogContent>
         )}

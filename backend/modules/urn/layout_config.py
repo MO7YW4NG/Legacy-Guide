@@ -10,8 +10,8 @@ URN_LAYOUTS = {
     },
     "流芳骨灰罐.jpg": {
         "portrait": {"x": 320, "y": 250, "size": 160},
-        "left_text_x": 270,
-        "right_text_x": 110,
+        "left_text_x": 500,
+        "right_text_x": 280,
         "text_top_y": 160,
         "center_text": {"x": 390, "y": 430}
     },
@@ -31,7 +31,7 @@ URN_LAYOUTS = {
     },
     "繽紛骨罐.png": {
         "portrait": {"x": 315, "y": 250, "size": 160},
-        "left_text_x": 235,
+        "left_text_x": 220,
         "right_text_x": 550,
         "text_top_y": 200,
         "center_text": {"x": 380, "y": 430}

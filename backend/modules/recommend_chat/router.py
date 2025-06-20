@@ -177,7 +177,7 @@ async def parse_conversation(request: ParseConversationRequest):
 
         # 使用現有的 LLM 來解析
         llm = GoogleGenAI(
-            model="gemini-2.5-flash-preview-05-20",
+            model="gemini-2.5-flash",
             api_key=GEMINI_API_KEY
         )
         

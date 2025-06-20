@@ -8,7 +8,7 @@ const pageTitles: { [key: string]: string } = {
   '/lunar-calendar': '農民曆查詢',
   '/planning': '流程規劃',
   // '/ritual-calendar': '祭祀日曆',
-  '/urn-simulator': '骨灰罈模擬器',
+  '/urn-simulator': '骨罐設計',
   // '/obituary-writer': '訃聞撰寫',
   '/chatbot': '智能問答',
 };

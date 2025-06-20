@@ -49,14 +49,14 @@ def initialize_shared_components():
 
             # 初始化 LLM
             _shared_llm = GoogleGenAI(
-                model="gemini-2.5-flash-preview-05-20",
+                model="gemini-2.5-flash",
                 api_key=os.getenv("GEMINI_API_KEY")
             )
             
             Settings.embed_model = _shared_embed_model
             Settings.llm = _shared_llm
-            Settings.chunk_size = 512  # 使用較大的分塊大小
-            Settings.chunk_overlap = 50  # 使用較大的重疊
+            Settings.chunk_size = 1024  # 使用較大的分塊大小
+            Settings.chunk_overlap = 100  # 使用較大的重疊
 
             # 建立向量索引
             _shared_index = VectorStoreIndex.from_documents(
@@ -81,7 +81,7 @@ def initialize_shared_components():
 
             # 初始化 LLM
             _shared_llm = GoogleGenAI(
-                model="gemini-2.5-flash-preview-05-20",
+                model="gemini-2.5-flash",
                 api_key=os.getenv("GEMINI_API_KEY")
             )
             
@@ -122,7 +122,7 @@ def create_rag_engine(
         
         # 創建具有特定配置的 LLM
         llm = GoogleGenAI(
-            model="gemini-2.5-flash-preview-05-20",
+            model="gemini-2.5-flash",
             api_key=os.getenv("GEMINI_API_KEY"),
             generation_config=GenerateContentConfig(
                 temperature=temperature,

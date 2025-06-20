@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Form
 from fastapi.responses import JSONResponse, Response
 from lunar_python import Solar, Lunar
 from opencc import OpenCC
@@ -6,11 +6,15 @@ from modules.models import GanZhi, LunarInfo, Date, RitualDates
 import re
 from datetime import datetime, timedelta
 from ics import Calendar, Event
-from typing import Optional
+from typing import Optional, Dict
+from pydantic import BaseModel
 
 
 router = APIRouter()
 cc = OpenCC('s2t')  # 簡體轉繁體
+
+class IcsExportRequest(BaseModel):
+    events: Dict[str, str]
 
 """取得指定陽曆日期的詳細農曆資訊。"""
 @router.get("/lunar", response_model=LunarInfo)
@@ -107,50 +111,33 @@ def ritual_dates(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"內部錯誤: {e}"})
 
-@router.get("/export/ritual_dates.ics")
-def export_ritual_dates_ics(
-    date: str = Query(..., description="格式：YYYY-MM-DD"),
-    traditional: bool = Query(True, description="作七模式: 是否為traditional (預設為True)"),
-    selected_date: Optional[str] = Query(None, description="選擇的吉日，格式：YYYY-MM-DD")
-):
+@router.post("/export/ritual_dates.ics")
+def export_ritual_dates_ics(request: IcsExportRequest):
     """
-    計算所有祭祀日期並匯出為 .ics 檔案。
-    如果提供了 selected_date，會額外標記為吉日。
+    接收一組事件（名稱與日期），並將其匯出為 .ics 檔案。
     """
     try:
-        # 取得祭祀日期
-        ritual_dates_response = ritual_dates(date, traditional)
-        if isinstance(ritual_dates_response, JSONResponse):
-            return ritual_dates_response
-
-        # 建立日曆
         cal = Calendar()
-        for name, date_info in ritual_dates_response:
-            if date_info and date_info.solar:
-                event = Event()
-                event.name = f"祭祀日：{name}"
-                # 將日期設為全天事件
-                event.begin = date_info.solar
-                event.make_all_day()
-                event.description = f"農曆日期：{date_info.lunar}"
-                cal.events.add(event)
-
+        
         # 如果有選擇的吉日，也加入到日曆中
-        if selected_date:
-            try:
-                # 驗證日期格式
-                datetime.strptime(selected_date, "%Y-%m-%d")
-                lunar_info = get_lunar_info(selected_date)
-                
-                event = Event()
-                event.name = "吉日"
-                event.begin = selected_date
-                event.make_all_day()
-                event.description = f"此日為您選擇的吉日。\n農曆：{lunar_info.日期.lunar}\n宜：{', '.join(lunar_info.宜)}\n忌：{', '.join(lunar_info.忌)}"
-                cal.events.add(event)
-            except (ValueError, AttributeError):
-                # 日期格式錯誤或獲取農曆資訊失敗，可以選擇忽略或回傳錯誤
-                pass
+        if request.events:
+            for name, date_str in request.events.items():
+                if not name or not date_str:
+                    continue
+                try:
+                    # 驗證日期格式
+                    datetime.strptime(date_str, "%Y-%m-%d")
+                    lunar_info = get_lunar_info(date_str)
+                    
+                    event = Event()
+                    event.name = name
+                    event.begin = date_str
+                    event.make_all_day()
+                    event.description = f"此日為您選擇的事件。\n農曆：{lunar_info.日期.lunar}\n宜：{', '.join(lunar_info.宜)}\n忌：{', '.join(lunar_info.忌)}"
+                    cal.events.add(event)
+                except (ValueError, AttributeError):
+                    # 日期格式錯誤或獲取農曆資訊失敗，可以選擇忽略或回傳錯誤
+                    pass
 
         # 產生 .ics 內容並回傳
         ics_content = str(cal)

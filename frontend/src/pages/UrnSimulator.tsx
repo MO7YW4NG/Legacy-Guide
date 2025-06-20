@@ -198,9 +198,9 @@ const UrnSimulator = () => {
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">骨灰罈模擬器</h1>
+        <h1 className="text-3xl font-bold tracking-tight">骨罐設計</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-          透過選擇樣式與填寫資料，即時預覽個人化的骨灰罈設計。
+          透過選擇樣式與填寫資料，即時預覽個人化的骨罐設計。
         </p>
       </div>
 

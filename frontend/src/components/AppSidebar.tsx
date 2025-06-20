@@ -17,7 +17,7 @@ const menuItems = [
   { to: "/lunar-calendar", label: "農民曆查詢", icon: BookOpen },
   { to: "/planning", label: "流程規劃", icon: ClipboardList },
   // { to: "/ritual-calendar", label: "祭祀日曆", icon: Heart },
-  { to: "/urn-simulator", label: "骨灰罈模擬", icon: Package },
+  { to: "/urn-simulator", label: "骨罐設計", icon: Package },
   // { to: "/obituary-writer", label: "訃聞撰寫", icon: FileText },
   { to: "/chatbot", label: "智能問答", icon: Bot },
 ];

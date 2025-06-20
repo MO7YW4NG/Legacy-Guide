@@ -1,41 +1,43 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, Heart, Download } from "lucide-react";
+import { Calendar, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getBackendUrl } from "@/lib/utils";
-import { format } from "date-fns";
 
 interface ActionButtonsProps {
-  formData: {
-    deathDate?: Date | string;
-    [key: string]: any;
-  };
+  allEvents: { [key: string]: string };
 }
 
-export const ActionButtons = ({ formData }: ActionButtonsProps) => {
+export const ActionButtons = ({ allEvents }: ActionButtonsProps) => {
   const navigate = useNavigate();
 
   const handleDownloadIcs = async () => {
-    if (!formData.deathDate) {
-      alert("請先設定歿日才能下載行事曆");
+    if (Object.keys(allEvents).length === 0) {
+      alert("沒有可匯出的日期");
       return;
     }
 
     try {
-      const date = format(new Date(formData.deathDate), "yyyy-MM-dd");
-      const response = await fetch(`${getBackendUrl()}/api/export/ritual_dates.ics?date=${date}&traditional=true`);
+      const url = `${getBackendUrl()}/api/export/ritual_dates.ics`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ events: allEvents }),
+      });
       
       if (!response.ok) {
         throw new Error("下載失敗");
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = "ritual_dates.ics";
+      a.href = downloadUrl;
+      a.download = "all_events.ics";
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(downloadUrl);
       a.remove();
 
     } catch (error) {
@@ -49,10 +51,6 @@ export const ActionButtons = ({ formData }: ActionButtonsProps) => {
       <Button onClick={() => navigate('/lunar-calendar')} variant="outline">
         <Calendar className="w-4 h-4 mr-2" />
         查看農民曆
-      </Button>
-      <Button onClick={() => navigate('/ritual-calendar')} variant="outline">
-        <Heart className="w-4 h-4 mr-2" />
-        祭祀日曆
       </Button>
       <Button onClick={handleDownloadIcs}>
         <Download className="w-4 h-4 mr-2" />

@@ -38,13 +38,19 @@ const ChatInterface = ({
   const [inputMessage, setInputMessage] = useState('');
   const [isVideoOn, setIsVideoOn] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isAISpeaking, setIsAISpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showVideo, setShowVideo] = useState(false);
+  const [audioData, setAudioData] = useState<Uint8Array | null>(null);
   const [conversationHistory, setConversationHistory] = useState<string>(
     initialConversationHistory || ''
   );
   const scrollRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const animationFrameIdRef = useRef<number | null>(null);
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -67,15 +73,75 @@ const ChatInterface = ({
     }
   }, [conversationHistory, onConversationHistoryUpdate]);
 
-  // 模擬AI說話動畫
   useEffect(() => {
-    if (isVideoOn) {
-      const interval = setInterval(() => {
-        setIsAISpeaking(prev => !prev);
-      }, 2000);
-      return () => clearInterval(interval);
+    const videoElement = videoRef.current;
+
+    // Function to set up audio analysis
+    const setupAudioAnalysis = () => {
+      if (!videoElement) return;
+
+      if (!audioContextRef.current) {
+        const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = context;
+        analyserRef.current = context.createAnalyser();
+        analyserRef.current.fftSize = 32;
+        sourceRef.current = context.createMediaElementSource(videoElement);
+        sourceRef.current.connect(analyserRef.current);
+        analyserRef.current.connect(context.destination);
+      }
+    };
+
+    // Function to start waveform animation
+    const startAnimation = () => {
+      if (!analyserRef.current) return;
+      if (audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+      
+      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+      const animate = () => {
+        if (analyserRef.current) {
+          analyserRef.current.getByteFrequencyData(dataArray);
+          setAudioData(new Uint8Array(dataArray));
+          animationFrameIdRef.current = requestAnimationFrame(animate);
+        }
+      };
+      animate();
+    };
+
+    // Function to stop waveform animation
+    const stopAnimation = () => {
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+      }
+      setAudioData(null);
+    };
+    
+    if (showVideo && videoElement) {
+      setupAudioAnalysis();
+      videoElement.addEventListener('play', startAnimation);
+      videoElement.addEventListener('pause', stopAnimation);
+      videoElement.addEventListener('ended', stopAnimation);
     }
-  }, [isVideoOn]);
+
+    return () => {
+      if (videoElement) {
+        videoElement.removeEventListener('play', startAnimation);
+        videoElement.removeEventListener('pause', stopAnimation);
+        videoElement.removeEventListener('ended', stopAnimation);
+      }
+      stopAnimation();
+    };
+  }, [showVideo]);
+
+  // Cleanup AudioContext on component unmount
+  useEffect(() => {
+    return () => {
+      sourceRef.current?.disconnect();
+      analyserRef.current?.disconnect();
+      audioContextRef.current?.close().catch(e => console.error("Failed to close AudioContext", e));
+    };
+  }, []);
 
   // Parse conversation after each message
   const parseConversation = (newMessage: string) => {
@@ -148,6 +214,45 @@ const ChatInterface = ({
     }
   };
 
+  const handleRecordingToggle = () => {
+    if (isRecording) {
+      // This is when user STOPS recording
+      setIsRecording(false);
+      setLoading(true);
+      
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: '我的預算大概是十萬元，請問你們能提供哪些方案？',
+        isUser: true,
+        timestamp: new Date(),
+      };
+      setTimeout(() => {
+        setMessages(prev => [...prev, userMessage]);
+      }, 1500);
+  
+      setTimeout(() => {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: '您好，根據您十萬元的預算，最適合您的方案是 **「圓愛生前契約」**。\n\n*   **定價：** 8 萬元\n*   **特色：** 高度彈性\n\n這個方案已包含臨終關懷、遺體接運、設立靈堂等核心服務。\n\n剩下的預算，您可以像「菜單點餐」一樣，自由加購您最重視的項目，例如「入殮」或「火化」，來打造一個符合您預算的客製化方案。\n\n我會協助您搭配組合，確保在預算內為父親辦理一場莊重圓滿的告別式。',
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+        setShowVideo(true);
+        if (!isVideoOn) {
+          setIsVideoOn(true);
+        }
+  
+        setLoading(false);
+      }, 3000);
+  
+    } else {
+      // This is when user STARTS recording
+      setIsRecording(true);
+      setShowVideo(false);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -177,40 +282,39 @@ const ChatInterface = ({
           <div className="border-b border-border p-6 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
             <div className="text-center">
               <Avatar className={`w-32 h-32 mx-auto mb-4 transition-all duration-300 ${
-                isAISpeaking ? 'ring-4 ring-blue-400 ring-opacity-50 scale-105' : 'scale-100'
+                audioData ? 'ring-4 ring-blue-400 ring-opacity-50 scale-105' : 'scale-100'
               }`}>
-                <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-2xl">
-                  AI
-                </AvatarFallback>
+                {showVideo ? (
+                  <video
+                    ref={videoRef}
+                    // In Vite, files in the `public` directory are served from the root.
+                    src="/video.mp4"
+                    autoPlay
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-2xl">
+                    AI
+                  </AvatarFallback>
+                )}
               </Avatar>
               <h3 className="text-lg font-medium text-gray-800 mb-2">智能助理小瑜</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                {isAISpeaking ? '正在回答您的問題...' : '您好，我是您的專屬助理'}
-              </p>
               
               {/* 語音波形動畫 */}
-              {isAISpeaking && (
-                <div className="flex justify-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
+              {audioData && (
+                <div className="flex justify-center items-end gap-1 mb-4 h-6">
+                  {Array.from(audioData).map((value, i) => (
                     <div
                       key={i}
-                      className="w-1 bg-blue-400 rounded-full animate-pulse"
+                      className="w-1 bg-blue-400 rounded-full"
                       style={{
-                        height: `${Math.random() * 20 + 10}px`,
-                        animationDelay: `${i * 0.1}s`
+                        height: `${Math.max(2, (value / 255) * 24)}px`,
+                        transition: 'height 0.05s ease-out'
                       }}
                     />
                   ))}
                 </div>
               )}
-              
-              {/* 狀態指示器 */}
-              <div className="flex justify-center">
-                <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-green-700 text-xs font-medium">視訊通話中</span>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -273,7 +377,7 @@ const ChatInterface = ({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setIsRecording(!isRecording)}
+              onClick={handleRecordingToggle}
               className={isRecording ? "bg-red-100 text-red-600" : ""}
               disabled={loading}
             >

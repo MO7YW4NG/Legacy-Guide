@@ -53,7 +53,8 @@ def generate_design_image(urn_path, portrait_path, name, birth_date, death_date)
         raise ValueError(f"找不到樣式對應的 layout 設定: {urn_filename}")
 
     draw = ImageDraw.Draw(base)
-    font_path = "./uploads/urn_fonts/msjh.ttc"
+    font_path = "./modules/urn/fonts/msjh.ttc"
+    print(font_path)
     font = ImageFont.truetype(font_path, 28)
 
     # ✅ 遺像轉黑白 + 遮罩
