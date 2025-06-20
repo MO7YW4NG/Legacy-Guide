@@ -1,9 +1,9 @@
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format, addDays, isSameDay, startOfMonth, endOfMonth } from "date-fns";
 import { DayContentProps } from "react-day-picker";
 
-import { cn } from "@/lib/utils";
+import { cn, getBackendUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,11 +30,43 @@ interface OverviewCalendarProps {
     badFor: string;
     conflicts: string;
   }>;
+  city?: string;
 }
 
-export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays }: OverviewCalendarProps) {
+export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays, city }: OverviewCalendarProps) {
   const [month, setMonth] = useState(deathDate);
   const [selectedData, setSelectedData] = useState<DayData | null>(null);
+  const [cremationAvailability, setCremationAvailability] = useState<{ [key: string]: string[] }>({});
+  const [isFetchingCremation, setIsFetchingCremation] = useState(false);
+
+  useEffect(() => {
+    const fetchCremationData = async () => {
+      if (!city || (city !== "高雄市" && city !== "桃園市")) {
+        setCremationAvailability({});
+        return;
+      }
+
+      setIsFetchingCremation(true);
+      const startDate = format(startOfMonth(month), "yyyy-MM-dd");
+      const endDate = format(endOfMonth(month), "yyyy-MM-dd");
+      const endpoint = city === "高雄市" ? "crawl_kaohsiung_info" : "crawl_taoyuan_info";
+      
+      try {
+        const response = await fetch(`${getBackendUrl()}/api/${endpoint}?start_date=${startDate}&end_date=${endDate}`);
+        const data = await response.json();
+        if (data.availability) {
+          setCremationAvailability(data.availability);
+        }
+      } catch (error) {
+        console.error(`Error fetching cremation data for ${city}:`, error);
+        setCremationAvailability({});
+      } finally {
+        setIsFetchingCremation(false);
+      }
+    };
+
+    fetchCremationData();
+  }, [city, month]);
 
   const calendarData = useMemo(() => {
     const dataMap = new Map<string, DayData>();
@@ -49,15 +81,21 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays }: Ove
       const ritual = ritualDatesArray.find(r => isSameDay(r.date, day));
       const auspicious = auspiciousDays.find(a => isSameDay(a.date, day));
 
-      // Mock cremation status
-      let cremationStatus: "額滿" | "尚有名額";
-      const dayOfWeek = day.getDay();
-      if (auspicious || ritual) {
-          cremationStatus = Math.random() > 0.2 ? '額滿' : '尚有名額';
-      } else if (dayOfWeek === 0 || dayOfWeek === 6) {
-          cremationStatus = Math.random() > 0.5 ? '額滿' : '尚有名額';
+      let cremationStatus: "額滿" | "尚有名額" = "額滿";
+      if (city && (city === "高雄市" || city === "桃園市")) {
+        if (cremationAvailability[dateStr] && cremationAvailability[dateStr].length > 0) {
+          cremationStatus = "尚有名額";
+        }
       } else {
-          cremationStatus = Math.random() > 0.8 ? '額滿' : '尚有名額';
+        // Mock cremation status for other cities
+        const dayOfWeek = day.getDay();
+        if (auspicious || ritual) {
+            cremationStatus = Math.random() > 0.2 ? '額滿' : '尚有名額';
+        } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+            cremationStatus = Math.random() > 0.5 ? '額滿' : '尚有名額';
+        } else {
+            cremationStatus = Math.random() > 0.8 ? '額滿' : '尚有名額';
+        }
       }
 
       dataMap.set(dateStr, {
@@ -71,7 +109,7 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays }: Ove
       });
     }
     return dataMap;
-  }, [deathDate, ritualDates, auspiciousDays]);
+  }, [deathDate, ritualDates, auspiciousDays, city, cremationAvailability]);
   
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -81,12 +119,28 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays }: Ove
     if (data) {
         setSelectedData(data);
     } else {
+        const dateStr = format(date, "yyyy-MM-dd");
+        let cremationStatus: "額滿" | "尚有名額" = "額滿";
+        if (cremationAvailability[dateStr] && cremationAvailability[dateStr].length > 0) {
+          cremationStatus = "尚有名額";
+        }
         // Create default data for any clicked date outside the pre-generated range
         setSelectedData({
             date: date,
-            cremationStatus: Math.random() > 0.7 ? '額滿' : '尚有名額',
+            cremationStatus: cremationStatus,
         });
     }
+  };
+
+  const handleExportDate = () => {
+    if (!selectedData) return;
+    const selectedDateStr = format(selectedData.date, "yyyy-MM-dd");
+    const deathDateStr = format(deathDate, "yyyy-MM-dd");
+    
+    const url = `${getBackendUrl()}/lunar/export/ritual_dates.ics?date=${deathDateStr}&selected_date=${selectedDateStr}`;
+    window.location.href = url;
+    
+    setSelectedData(null);
   };
 
   const DayContent = ({ date }: DayContentProps) => {
@@ -101,8 +155,11 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays }: Ove
           {data?.auspiciousReason && !data.ritualName && <div className="text-is-success font-semibold">[吉日推薦]</div>}
         </div>
         <div className="text-xs w-full">
-          {data?.cremationStatus === '額滿' ? 
-            <div className="text-destructive/80">火化(額滿)</div> :
+          {isFetchingCremation && <div className="text-muted-foreground animate-pulse">查詢中...</div>}
+          {!isFetchingCremation && data?.cremationStatus === '額滿' && 
+            <div className="text-destructive/80">火化(額滿)</div>
+          }
+          {!isFetchingCremation && data?.cremationStatus === '尚有名額' &&
             <div className="text-muted-foreground">火化(可預約)</div>
           }
         </div>
@@ -177,7 +234,7 @@ export function OverviewCalendar({ deathDate, ritualDates, auspiciousDays }: Ove
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setSelectedData(null)}>關閉</Button>
-                    <Button className="bg-vi-dark hover:opacity-90">選擇此日期</Button>
+                    <Button className="bg-vi-dark hover:opacity-90" onClick={handleExportDate}>選擇此日期</Button>
                 </DialogFooter>
             </DialogContent>
         )}

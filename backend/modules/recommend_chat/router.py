@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from enum import Enum
 import os
 import logging
 from dotenv import load_dotenv
@@ -32,35 +33,30 @@ class ParsedFormData(BaseModel):
     birth_date: str = ""
     death_date: str = ""
     zodiac: str = ""
-    clash_info: str = ""
-    
     # 地點資訊
-    location: str = ""
-    venue_recommendation: str = ""
+    city: str = ""
     
     # 聯絡人資訊
     contact_name: str = ""
     contact_phone: str = ""
     contact_email: str = ""
     religion: str = ""
+    family_zodiacs: list[str] = []
     
     # 預算與時程
-    budget_min: int = 0
-    budget_max: int = 0
-    budget_range: str = ""
-    completion_days: str = ""
+    budget: int = 0
+    completion_weeks: int = 0
     
     # 方案與特殊需求
     recommended_plan: str = ""
     special_requirements: str = ""
 
 # 初始化 RAG 引擎 - 使用 recommend_chat router 的配置
-recommend_system_prompt = """角色設定:你是一位經驗豐富、具有高度同理心與責任感殯葬禮儀顧問(請以LegacyGuide自稱)，請根據知識文件內容回答使用者的問題，不用自我介紹功能，輸出不要超過250字。
+recommend_system_prompt = """角色設定:你是一位經驗豐富、具有高度同理心與責任感殯葬禮儀顧問(請以LegacyGuide自稱)，不用自我介紹，輸出不要超過250字。
 
 行為設定:
     1.若文件中沒有相關資訊，請坦誠說明「無法提供答案」而不是亂編。
-    2.請用禮貌、溫和且易懂的口吻回答，並在回答後附上參考的知識來源標題（若有）。
-    3.將參考知識以網站名稱加上超連結呈現。
+    2.請用禮貌、溫和且易懂的口吻回答。
 
 語氣風格:
     1.使用溫暖、理性、具同理心的語氣  
@@ -71,14 +67,15 @@ recommend_system_prompt = """角色設定:你是一位經驗豐富、具有高�
     1.整體規劃:根據使用者輸入的資訊，推薦方案並說明。
     2.流程範例:
         (1)詢問家屬往生者姓名、性別、生日(推算生肖)、過世日期。
-        (2)詢問家屬方便辦喪事的地點，搜尋並推薦龍巖相關設施。
+        (2)詢問家屬方便辦喪事的城市。
         (3)詢問家屬主要聯絡人姓名、電話、電子郵件、宗教信仰。
-        (4)詢問家屬預算範圍。
-        (5)系統推薦方案(請根據龍巖的六個方案做推薦，不要跟家屬的ˋ預算範圍差太多都可以)。
-        (6)詢問家屬期望在幾天內完成。
-        (7)詢問家屬有無特殊需求，並根據特殊需求調整方案內容。
+        (4)詢問家屬生肖。
+        (5)詢問家屬預算範圍。
+        (6)系統推薦方案(請根據龍巖的生前契約方案做推薦，請符合預算範圍)。
+        (7)詢問家屬期望在幾週內完成。
+        (8)詢問家屬有無特殊需求。
 
-請根據以上prompt提供一個完整的回答。"""
+請一步步思考並提供一個完整的回答"""
 
 try:
     query_engine = create_rag_engine(
@@ -131,52 +128,49 @@ async def parse_conversation(request: ParseConversationRequest):
    - 生日（用於推算生肖）
    - 過世日期
    - 生肖(以出生日期推算)
-   - 沖煞相關說明
 
 2. 辦事地點：
-   - 方便辦喪事的地點
-   - 推薦的龍巖設施
+   - 方便辦喪事的城市
 
 3. 聯絡人資訊：
    - 主要聯絡人姓名
    - 電話
    - 電子郵件
-   - 宗教信仰
-
+   - 宗教信仰(佛教/道教/基督教/天主教/無宗教信仰)
+   - 家屬生肖
+    
 4. 預算範圍：
-   - 預算金額範圍
+   - 預算金額
 
 5. 推薦方案：
-   - 系統推薦的方案內容
+   - 系統推薦的龍巖生前契約方案內容
 
 6. 完成時程：
-   - 期望幾天內完成
+   - 期望幾週內完成
 
 7. 特殊需求：
    - 特殊需求或注意事項
 
-請嚴格按照以下JSON格式回傳，如果某項資訊未提及則保持空字串或0：
-
+請嚴格按照以下JSON格式回傳，如果某項資訊未提及則保持空字串、空list或0：
+```json
 {{
     "deceased_name": "往生者姓名",
     "gender": "性別(男/女)",
     "birth_date": "生日(YYYY-MM-DD格式)",
     "death_date": "過世日期(YYYY-MM-DD格式)",
     "zodiac": "生肖",
-    "clash_info": "沖煞相關說明",
-    "location": "辦事地點",
-    "venue_recommendation": "推薦設施",
+    "city": "城市",
     "contact_name": "聯絡人姓名",
     "contact_phone": "聯絡人電話",
     "contact_email": "聯絡人郵件",
-    "religion": "宗教信仰",
-    "budget_min": 最低預算數字,
-    "budget_max": 最高預算數字,
-    "budget_range": "預算範圍描述",
-    "completion_days": "完成天數",
-    "recommended_plan": "推薦方案",
+    "religion": "宗教信仰(佛教/道教/基督教/天主教/無宗教信仰)",
+    "family_zodiacs": ["家屬生肖", "家屬生肖2"],
+    "budget": 預算數字,
+    "completion_weeks": 完成週數數字,
+    "recommended_plan": "推薦方案名稱(請參考龍巖的生前契約方案)",
     "special_requirements": "特殊需求"
 }}
+```
 
 請只回傳JSON格式，不要包含其他文字。
 """
@@ -241,17 +235,14 @@ def extract_info_with_regex(conversation_text: str) -> dict:
         "birth_date": "",
         "death_date": "",
         "zodiac": "",
-        "clash_info": "",
-        "location": "",
-        "venue_recommendation": "",
+        "city": "",
         "contact_name": "",
         "contact_phone": "",
         "contact_email": "",
+        "family_zodiacs": [],
         "religion": "",
-        "budget_min": 0,
-        "budget_max": 0,
-        "budget_range": "",
-        "completion_days": "",
+        "budget": 0,
+        "completion_weeks": 0,
         "recommended_plan": "",
         "special_requirements": ""
     }
@@ -273,25 +264,40 @@ def extract_info_with_regex(conversation_text: str) -> dict:
         extracted["gender"] = "男"
     elif re.search(r'女|小姐|太太|媽媽|母親', conversation_text):
         extracted["gender"] = "女"
+
+    # 城市提取
+    city_match = re.search(r'(?:地點|城市).*?[在是]?[:：]?\s*(\w+[市縣])', conversation_text)
+    if city_match:
+        extracted["city"] = city_match.group(1).strip()
+
+    # 家屬生肖提取
+    zodiac_match = re.search(r'家屬生肖(?:有|是|：|:)\s*([^\n\r]+)', conversation_text)
+    if zodiac_match:
+        zodiac_str = zodiac_match.group(1)
+        all_zodiacs = "鼠牛虎兔龍蛇馬羊猴雞狗豬"
+        found_zodiacs = [z for z in zodiac_str if z in all_zodiacs]
+        if found_zodiacs:
+            extracted["family_zodiacs"] = found_zodiacs
     
     # 預算提取
-    budget_match = re.search(r'預算.*?(\d+).*?到.*?(\d+)|(\d+).*?萬', conversation_text)
+    budget_match = re.search(r'預算.*?(\d+).*?萬', conversation_text)
     if budget_match:
-        if budget_match.group(1) and budget_match.group(2):
-            extracted["budget_min"] = int(budget_match.group(1)) * 10000
-            extracted["budget_max"] = int(budget_match.group(2)) * 10000
-        elif budget_match.group(3):
-            extracted["budget_max"] = int(budget_match.group(3)) * 10000
-    
+        extracted["budget"] = int(budget_match.group(1)) * 10000
+
     # 電話提取
     phone_match = re.search(r'電話.*?(09\d{8}|\d{2,3}-\d{6,8})', conversation_text)
     if phone_match:
         extracted["contact_phone"] = phone_match.group(1)
     
     # 天數提取/看要不要換算成週
-    days_match = re.search(r'(\d+)天', conversation_text)
-    if days_match:
-        extracted["completion_days"] = days_match.group(1) + "天"
+    weeks_match = re.search(r'(\d+)周', conversation_text)
+    if weeks_match:
+        extracted["completion_weeks"] = int(weeks_match.group(1))
+    
+    # 特殊需求提取
+    requirements_match = re.search(r'特殊需求.*?[是為有：:]\s*([^\n\r]+)', conversation_text)
+    if requirements_match:
+        extracted["special_requirements"] = requirements_match.group(1).strip()
     
     return extracted
 

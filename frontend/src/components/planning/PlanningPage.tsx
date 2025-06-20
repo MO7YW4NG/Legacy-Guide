@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,38 +8,11 @@ import ChatInterface from "./ChatInterface";
 import StepOne from "./StepOne";
 import StepTwo from "./StepTwo";
 import StepThree from "./StepThree";
-
-interface ParsedFormData {
-  deceased_name: string;
-  gender: string;
-  birth_date: string;
-  death_date: string;
-  zodiac: string;
-  clash_info: string;
-  location: string;
-  venue_recommendation: string;
-  contact_name: string;
-  contact_phone: string;
-  contact_email: string;
-  religion: string;
-  budget_min: number;
-  budget_max: number;
-  budget_range: string;
-  completion_days: string;
-  recommended_plan: string;
-  special_requirements: string;
-}
-
-interface Message {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-}
+import { ParsedFormData, Message } from "@/types";
 
 const PlanningPage = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [parsedData, setParsedData] = useState<ParsedFormData | undefined>();
   const [formData, setFormData] = useState({
     // Step One - 往生者基本資料
     deceasedName: "",
@@ -46,7 +20,7 @@ const PlanningPage = () => {
     birthDate: null as Date | null,
     deathDate: null as Date | null,
     zodiac: "",
-    cityOfResidence: "",
+    city: "",
     
     // Step Two - 聯絡人資訊
     contactName: "",
@@ -57,7 +31,7 @@ const PlanningPage = () => {
     
     // Step Three - 預算與需求
     budget: 100000,
-    expectedDays: 7,
+    completion_weeks: 7,
     specialRequirements: ""
   });
 
@@ -73,81 +47,33 @@ const PlanningPage = () => {
   const [conversationHistory, setConversationHistory] = useState<string>('');
 
   const handleParsedDataUpdate = (data: ParsedFormData) => {
-    setParsedData(data);
-    
     // Auto-fill form data from parsed conversation
-    const updatedFormData = { ...formData };
-    let hasChanges = false;
-
-    if (data.deceased_name && !formData.deceasedName) {
-      updatedFormData.deceasedName = data.deceased_name;
-      hasChanges = true;
-    }
-    if (data.gender && !formData.gender) {
-      updatedFormData.gender = data.gender === "男" ? "male" : "female";
-      hasChanges = true;
-    }
-    if (data.birth_date && !formData.birthDate) {
-      updatedFormData.birthDate = new Date(data.birth_date);
-      hasChanges = true;
-    }
-    if (data.death_date && !formData.deathDate) {
-      updatedFormData.deathDate = new Date(data.death_date);
-      hasChanges = true;
-    }
-    if (data.zodiac && !formData.zodiac) {
-      updatedFormData.zodiac = data.zodiac;
-      hasChanges = true;
-    }
-    if (data.location && !formData.cityOfResidence) {
-      updatedFormData.cityOfResidence = data.location;
-      hasChanges = true;
-    }
-    if (data.contact_name && !formData.contactName) {
-      updatedFormData.contactName = data.contact_name;
-      hasChanges = true;
-    }
-    if (data.contact_phone && !formData.contactPhone) {
-      updatedFormData.contactPhone = data.contact_phone;
-      hasChanges = true;
-    }
-    if (data.contact_email && !formData.contactEmail) {
-      updatedFormData.contactEmail = data.contact_email;
-      hasChanges = true;
-    }
-    if (data.religion && !formData.religion) {
-      updatedFormData.religion = data.religion;
-      hasChanges = true;
-    }
-    // 處理家屬生肖數據（如果有的話）
-    if (data.clash_info && !formData.familyZodiacs.length) {
-      // 從沖煞信息中提取生肖（這裡可以根據實際需求調整邏輯）
-      const zodiacMatch = data.clash_info.match(/[鼠牛虎兔龍蛇馬羊猴雞狗豬]/g);
-      if (zodiacMatch) {
-        updatedFormData.familyZodiacs = [...new Set(zodiacMatch)]; // 去重
-        hasChanges = true;
+    setFormData(prev => {
+      const updated = { ...prev };
+      if (data.deceased_name) updated.deceasedName = data.deceased_name;
+      if (data.gender) updated.gender = data.gender === "男" ? "male" : "female";
+      if (data.birth_date) updated.birthDate = new Date(data.birth_date);
+      if (data.death_date) updated.deathDate = new Date(data.death_date);
+      if (data.zodiac) updated.zodiac = data.zodiac;
+      if (data.city) updated.city = data.city;
+      if (data.contact_name) updated.contactName = data.contact_name;
+      if (data.contact_phone) updated.contactPhone = data.contact_phone;
+      if (data.contact_email) updated.contactEmail = data.contact_email;
+      if (data.religion) updated.religion = data.religion;
+      if (data.family_zodiacs && data.family_zodiacs.length > 0) {
+        updated.familyZodiacs = data.family_zodiacs;
       }
-    }
-    if (data.budget_range && !formData.budget) {
-      // Convert budget range to number
-      const budgetMatch = data.budget_range.match(/(\d+)/);
-      if (budgetMatch) {
-        updatedFormData.budget = parseInt(budgetMatch[1]) * 1000;
-        hasChanges = true;
+      if (data.budget > 0) {
+        updated.budget = data.budget; 
       }
-    }
-    if (data.completion_days && !formData.expectedDays) {
-      updatedFormData.expectedDays = parseInt(data.completion_days);
-      hasChanges = true;
-    }
-    if (data.special_requirements && !formData.specialRequirements) {
-      updatedFormData.specialRequirements = data.special_requirements;
-      hasChanges = true;
-    }
-
-    if (hasChanges) {
-      setFormData(updatedFormData);
-    }
+      if (data.completion_weeks > 0) {
+        updated.completion_weeks = data.completion_weeks;
+      }
+      if (data.special_requirements) {
+        updated.specialRequirements = data.special_requirements;
+      }
+      return updated;
+    });
   };
 
   // 處理聊天消息更新
@@ -171,6 +97,10 @@ const PlanningPage = () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     }
+  };
+
+  const completePlanning = () => {
+    navigate('/overview', { state: { formData } });
   };
 
   const prevStep = () => {
@@ -227,13 +157,16 @@ const PlanningPage = () => {
                 上一步
               </Button>
               
-              <Button
-                onClick={nextStep}
-                disabled={currentStep === 3}
-              >
-                下一步
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
+              {currentStep === 3 ? (
+                <Button onClick={completePlanning}>
+                  完成規劃
+                </Button>
+              ) : (
+                <Button onClick={nextStep}>
+                  下一步
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              )}
             </div>
           </div>
         </Card>

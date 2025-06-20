@@ -18,12 +18,15 @@ const StepThree = ({ formData, onInputChange }: StepThreeProps) => {
     }).format(amount);
   };
 
-  const expectedDaysOptions = [
-    { value: 3, label: "3天內" },
-    { value: 7, label: "一週內" },
-    { value: 14, label: "兩週內" },
-    { value: 30, label: "一個月內" },
-    { value: 60, label: "兩個月內" }
+  const expectedWeeksOptions = [
+    { value: 1, label: "1週內" },
+    { value: 2, label: "2週內" },
+    { value: 3, label: "3週內" },
+    { value: 4, label: "4週內" },
+    { value: 5, label: "5週內" },
+    { value: 6, label: "6週內" },
+    { value: 7, label: "7週內" },
+    { value: 8, label: "8週內" }
   ];
 
   return (
@@ -40,14 +43,14 @@ const StepThree = ({ formData, onInputChange }: StepThreeProps) => {
           <Slider
             value={[formData.budget]}
             onValueChange={(value) => onInputChange('budget', value[0])}
-            max={500000}
-            min={20000}
+            max={720000}
+            min={80000}
             step={10000}
             className="w-full"
           />
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>NT$ 20,000</span>
-            <span>NT$ 500,000+</span>
+            <span>NT$ 70,000</span>
+            <span>NT$ 720,000+</span>
           </div>
         </div>
         <div className="bg-muted p-3 rounded-lg border-l-4 border-primary">
@@ -61,14 +64,14 @@ const StepThree = ({ formData, onInputChange }: StepThreeProps) => {
       <div className="space-y-2">
         <Label className="text-lg">期望完成天數</Label>
         <Select 
-          value={formData.expectedDays.toString()} 
-          onValueChange={(value) => onInputChange('expectedDays', parseInt(value))}
+          value={formData.completion_weeks.toString()} 
+          onValueChange={(value) => onInputChange('completion_weeks', parseInt(value))}
         >
           <SelectTrigger>
             <SelectValue placeholder="請選擇期望的完成時間" />
           </SelectTrigger>
           <SelectContent>
-            {expectedDaysOptions.map((option) => (
+            {expectedWeeksOptions.map((option) => (
               <SelectItem key={option.value} value={option.value.toString()}>
                 {option.label}
               </SelectItem>

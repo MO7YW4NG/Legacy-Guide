@@ -5,9 +5,9 @@ import AppSidebar from "@/components/AppSidebar";
 
 const pageTitles: { [key: string]: string } = {
   '/': '首頁',
-  '/planning': '流程規劃',
   '/lunar-calendar': '農民曆查詢',
-  '/ritual-calendar': '祭祀日曆',
+  '/planning': '流程規劃',
+  // '/ritual-calendar': '祭祀日曆',
   '/urn-simulator': '骨灰罈模擬器',
   // '/obituary-writer': '訃聞撰寫',
   '/chatbot': '智能問答',

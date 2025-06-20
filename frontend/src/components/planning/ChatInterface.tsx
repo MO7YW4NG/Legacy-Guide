@@ -8,34 +8,7 @@ import { Send, Video, VideoOff, Mic, MicOff, Loader2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn, getBackendUrl } from "@/lib/utils";
-
-interface Message {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-}
-
-interface ParsedFormData {
-  deceased_name: string;
-  gender: string;
-  birth_date: string;
-  death_date: string;
-  zodiac: string;
-  clash_info: string;
-  location: string;
-  venue_recommendation: string;
-  contact_name: string;
-  contact_phone: string;
-  contact_email: string;
-  religion: string;
-  budget_min: number;
-  budget_max: number;
-  budget_range: string;
-  completion_days: string;
-  recommended_plan: string;
-  special_requirements: string;
-}
+import { ParsedFormData, Message } from "@/types";
 
 interface ChatInterfaceProps {
   onParsedDataUpdate?: (data: ParsedFormData) => void;

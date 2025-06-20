@@ -104,9 +104,9 @@ const StepOne = ({ formData, onInputChange }: StepOneProps) => {
 
         {/* 所在縣市 */}
         <div className="space-y-2">
-          <Label htmlFor="cityOfResidence">所在縣市</Label>
-          <Select value={formData.cityOfResidence} onValueChange={(value) => onInputChange('cityOfResidence', value)}>
-            <SelectTrigger id="cityOfResidence">
+          <Label htmlFor="city">所在縣市</Label>
+          <Select value={formData.city} onValueChange={(value) => onInputChange('city', value)}>
+            <SelectTrigger id="city">
               <SelectValue placeholder="請選擇縣市" />
             </SelectTrigger>
             <SelectContent>

@@ -10,13 +10,11 @@ interface StepTwoProps {
 
 const StepTwo = ({ formData, onInputChange }: StepTwoProps) => {
   const religions = [
-    { value: "buddhism", label: "佛教" },
-    { value: "taoism", label: "道教" },
-    { value: "christianity", label: "基督教" },
-    { value: "catholicism", label: "天主教" },
-    { value: "islam", label: "伊斯蘭教" },
-    { value: "none", label: "無特定宗教" },
-    { value: "other", label: "其他" }
+    { value: "佛教", label: "佛教" },
+    { value: "道教", label: "道教" },
+    { value: "基督教", label: "基督教" },
+    { value: "天主教", label: "天主教" },
+    { value: "無宗教信仰", label: "無宗教信仰" }
   ];
 
   const zodiacSigns = [
@@ -33,19 +31,6 @@ const StepTwo = ({ formData, onInputChange }: StepTwoProps) => {
     { value: "狗", label: "狗" },
     { value: "豬", label: "豬" }
   ];
-
-  const handleZodiacChange = (zodiac: string, checked: boolean) => {
-    const currentZodiacs = formData.familyZodiacs || [];
-    let newZodiacs;
-    
-    if (checked) {
-      newZodiacs = [...currentZodiacs, zodiac];
-    } else {
-      newZodiacs = currentZodiacs.filter((z: string) => z !== zodiac);
-    }
-    
-    onInputChange('familyZodiacs', newZodiacs);
-  };
 
   return (
     <div className="space-y-6">
@@ -112,7 +97,13 @@ const StepTwo = ({ formData, onInputChange }: StepTwoProps) => {
               <Checkbox
                 id={`zodiac-${zodiac.value}`}
                 checked={(formData.familyZodiacs || []).includes(zodiac.value)}
-                onCheckedChange={(checked) => handleZodiacChange(zodiac.value, checked as boolean)}
+                onCheckedChange={(checked) => {
+                  const currentZodiacs = formData.familyZodiacs || [];
+                  const newZodiacs = checked
+                    ? [...currentZodiacs, zodiac.value]
+                    : currentZodiacs.filter((z: string) => z !== zodiac.value);
+                  onInputChange('familyZodiacs', newZodiacs);
+                }}
               />
               <Label
                 htmlFor={`zodiac-${zodiac.value}`}

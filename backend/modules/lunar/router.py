@@ -6,6 +6,7 @@ from modules.models import GanZhi, LunarInfo, Date, RitualDates
 import re
 from datetime import datetime, timedelta
 from ics import Calendar, Event
+from typing import Optional
 
 
 router = APIRouter()
@@ -110,9 +111,11 @@ def ritual_dates(
 def export_ritual_dates_ics(
     date: str = Query(..., description="格式：YYYY-MM-DD"),
     traditional: bool = Query(True, description="作七模式: 是否為traditional (預設為True)"),
+    selected_date: Optional[str] = Query(None, description="選擇的吉日，格式：YYYY-MM-DD")
 ):
     """
     計算所有祭祀日期並匯出為 .ics 檔案。
+    如果提供了 selected_date，會額外標記為吉日。
     """
     try:
         # 取得祭祀日期
@@ -131,6 +134,23 @@ def export_ritual_dates_ics(
                 event.make_all_day()
                 event.description = f"農曆日期：{date_info.lunar}"
                 cal.events.add(event)
+
+        # 如果有選擇的吉日，也加入到日曆中
+        if selected_date:
+            try:
+                # 驗證日期格式
+                datetime.strptime(selected_date, "%Y-%m-%d")
+                lunar_info = get_lunar_info(selected_date)
+                
+                event = Event()
+                event.name = "吉日"
+                event.begin = selected_date
+                event.make_all_day()
+                event.description = f"此日為您選擇的吉日。\n農曆：{lunar_info.日期.lunar}\n宜：{', '.join(lunar_info.宜)}\n忌：{', '.join(lunar_info.忌)}"
+                cal.events.add(event)
+            except (ValueError, AttributeError):
+                # 日期格式錯誤或獲取農曆資訊失敗，可以選擇忽略或回傳錯誤
+                pass
 
         # 產生 .ics 內容並回傳
         ics_content = str(cal)

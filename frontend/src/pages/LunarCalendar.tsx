@@ -42,18 +42,6 @@ const LunarCalendar = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             日期選擇
-            <div className="flex items-center space-x-2">
-              <Sun className="w-4 h-4" />
-              <Switch
-                id="calendar-mode"
-                checked={isLunar}
-                onCheckedChange={setIsLunar}
-              />
-              <Moon className="w-4 h-4" />
-              <Label htmlFor="calendar-mode" className="text-sm">
-                {isLunar ? '農曆' : '國曆'}
-              </Label>
-            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -61,7 +49,7 @@ const LunarCalendar = () => {
             mode="single"
             selected={selectedDate}
             onSelect={(date) => date && setSelectedDate(date)}
-            className="rounded-md border pointer-events-auto"
+            className="rounded-md border pointer-events-auto mx-auto"
           />
           <div className="mt-4 p-3 bg-muted rounded-lg">
             <p className="text-center font-medium text-foreground">
