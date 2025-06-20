@@ -1,14 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import os
-from pathlib import Path
 import logging
-from llama_index.core import Document, VectorStoreIndex, SimpleDirectoryReader
-from llama_index.core.chat_engine.types import ChatMode
-from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
-from llama_index.llms.google_genai import GoogleGenAI
 from dotenv import load_dotenv
-from llama_index.core.prompts import PromptTemplate
+from modules.utils import create_rag_engine
 
 # 設定日誌
 logging.basicConfig(level=logging.INFO)
@@ -26,42 +21,8 @@ if not GEMINI_API_KEY:
 class ChatRequest(BaseModel):
     message: str
 
-def initialize_rag_engine():
-    try:
-        # 檢查 assets 目錄是否存在
-        assets_path = Path("./assets/")
-        if not assets_path.exists():
-            raise FileNotFoundError(f"Assets directory not found at {assets_path}")
-
-        # 使用 SimpleDirectoryReader 載入文件
-        reader = SimpleDirectoryReader(input_dir="./assets/")
-        example_docs = reader.load_data()
-        
-        if not example_docs:
-            raise ValueError("No documents found in assets directory")
-
-        # 初始化嵌入模型
-        embed_model = TextEmbeddingsInference(
-            model_name=os.getenv("EMBEDDING_MODEL_ID"),
-            base_url="http://embeddings-inference:80",
-            embed_batch_size=32
-        )
-
-        # 初始化 LLM
-        llm = GoogleGenAI(
-            model="gemini-2.5-flash-preview-05-20",
-            api_key=GEMINI_API_KEY
-        )
-
-        # 建立向量索引
-        index = VectorStoreIndex.from_documents(
-            example_docs,
-            show_progress=True,
-            embed_model=embed_model
-        )
-
-        # 設定系統提示詞
-        system_prompt = """角色設定:你是一位經驗豐富、具有高度同理心與責任感殯葬禮儀顧問(請以LegacyGuide自稱)，請根據知識文件內容回答使用者的問題，不用自我介紹功能。
+# 初始化 RAG 引擎 - 使用 chat router 的配置
+chat_system_prompt = """角色設定:你是一位經驗豐富、具有高度同理心與責任感殯葬禮儀顧問(請以LegacyGuide自稱)，請根據知識文件內容回答使用者的問題，不用自我介紹功能。
 
 行為設定:
 若文件中沒有相關資訊，請坦誠說明「無法提供答案」而不是亂編。
@@ -83,25 +44,15 @@ def initialize_rag_engine():
 
 請根據以上prompt提供一個完整的回答。"""
 
-        # 建立聊天引擎
-        query_engine = index.as_chat_engine(
-            llm=llm,
-            chat_mode=ChatMode.CONDENSE_PLUS_CONTEXT,
-            system_prompt=system_prompt
-        )
-
-        return query_engine
-
-    except Exception as e:
-        logger.error(f"Error initializing RAG engine: {str(e)}")
-        raise
-
-# 初始化 RAG 引擎
 try:
-    query_engine = initialize_rag_engine()
-    logger.info("RAG engine initialized successfully")
+    query_engine = create_rag_engine(
+        system_prompt=chat_system_prompt,
+        # temperature=0.8,
+        # max_output_tokens=1024
+    )
+    logger.info("Chat RAG engine initialized successfully")
 except Exception as e:
-    logger.error(f"Failed to initialize RAG engine: {str(e)}")
+    logger.error(f"Failed to initialize chat RAG engine: {str(e)}")
     raise
 
 @router.post("/rag")

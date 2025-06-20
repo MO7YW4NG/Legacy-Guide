@@ -16,21 +16,61 @@ interface Message {
   timestamp: Date;
 }
 
-const ChatInterface = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: '您好，我是智能助理。我可以幫助您規劃喪禮流程，請問有什麼可以為您服務的嗎？',
-      isUser: false,
-      timestamp: new Date()
-    }
-  ]);
+interface ParsedFormData {
+  deceased_name: string;
+  gender: string;
+  birth_date: string;
+  death_date: string;
+  zodiac: string;
+  clash_info: string;
+  location: string;
+  venue_recommendation: string;
+  contact_name: string;
+  contact_phone: string;
+  contact_email: string;
+  religion: string;
+  budget_min: number;
+  budget_max: number;
+  budget_range: string;
+  completion_days: string;
+  recommended_plan: string;
+  special_requirements: string;
+}
+
+interface ChatInterfaceProps {
+  onParsedDataUpdate?: (data: ParsedFormData) => void;
+  initialMessages?: Message[];
+  initialConversationHistory?: string;
+  onMessagesUpdate?: (messages: Message[]) => void;
+  onConversationHistoryUpdate?: (history: string) => void;
+}
+
+const ChatInterface = ({ 
+  onParsedDataUpdate,
+  initialMessages,
+  initialConversationHistory,
+  onMessagesUpdate,
+  onConversationHistoryUpdate
+}: ChatInterfaceProps) => {
+  const [messages, setMessages] = useState<Message[]>(
+    initialMessages || [
+      {
+        id: '1',
+        content: '您好，我是智能助理。我可以幫助您規劃喪禮流程，請問有什麼可以為您服務的嗎？',
+        isUser: false,
+        timestamp: new Date()
+      }
+    ]
+  );
   const [inputMessage, setInputMessage] = useState('');
   const [isVideoOn, setIsVideoOn] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conversationHistory, setConversationHistory] = useState<string>(
+    initialConversationHistory || ''
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto scroll to bottom when new messages arrive
@@ -39,6 +79,20 @@ const ChatInterface = () => {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // 當消息更新時通知父組件
+  useEffect(() => {
+    if (onMessagesUpdate) {
+      onMessagesUpdate(messages);
+    }
+  }, [messages, onMessagesUpdate]);
+
+  // 當對話歷史更新時通知父組件
+  useEffect(() => {
+    if (onConversationHistoryUpdate) {
+      onConversationHistoryUpdate(conversationHistory);
+    }
+  }, [conversationHistory, onConversationHistoryUpdate]);
 
   // 模擬AI說話動畫
   useEffect(() => {
@@ -49,6 +103,35 @@ const ChatInterface = () => {
       return () => clearInterval(interval);
     }
   }, [isVideoOn]);
+
+  // Parse conversation after each message
+  const parseConversation = (newMessage: string) => {
+    const updatedConversation = conversationHistory + '\n' + newMessage;
+    setConversationHistory(updatedConversation);
+
+    // Run in background without blocking UI
+    fetch(`${getBackendUrl()}/api/parse-conversation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ conversation_text: updatedConversation })
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      throw new Error('Parse conversation failed');
+    })
+    .then(result => {
+      if (result.success && result.parsed_data && onParsedDataUpdate) {
+        onParsedDataUpdate(result.parsed_data);
+      }
+    })
+    .catch(error => {
+      console.error('Error parsing conversation:', error);
+    });
+  };
 
   const handleSendMessage = async () => {
     if (inputMessage.trim() && !loading) {
@@ -62,6 +145,10 @@ const ChatInterface = () => {
       setInputMessage('');
       setLoading(true);
       setError(null);
+
+      // Parse conversation with user message (background)
+      parseConversation(`用戶：${inputMessage}`);
+
       try {
         const res = await fetch(`${getBackendUrl()}/api/rag2`, {
           method: 'POST',
@@ -77,6 +164,9 @@ const ChatInterface = () => {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, aiResponse]);
+
+        // Parse conversation with AI response (background)
+        parseConversation(`AI：${data.answer}`);
       } catch (e) {
         setError('AI 回覆失敗，請稍後再試');
       } finally {
@@ -93,7 +183,7 @@ const ChatInterface = () => {
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col min-h-0">
       <CardHeader className="border-b border-border pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-card-foreground font-light text-lg">智能問答助理</CardTitle>
@@ -153,7 +243,7 @@ const ChatInterface = () => {
         )}
 
         <div className="flex-1 min-h-0 p-4">
-          <ScrollArea className="h-full">
+          <ScrollArea className="h-full" type="always">
             <div className="space-y-4 pr-4">
               {messages.map((message) => (
                 <div

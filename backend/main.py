@@ -11,7 +11,6 @@ from modules.crawler.router import router as crawler_router
 from modules.auspicious_days.router import router as auspicious_days_router
 from modules.urn.router import router as urn_router
 
-
 app = FastAPI(title="LegacyGuide API")
 
 # 加入 CORS middleware

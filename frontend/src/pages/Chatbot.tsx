@@ -91,12 +91,12 @@ const Chatbot = () => {
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-10rem)]">
-      <Card className="flex-1 flex flex-col">
+      <Card className="flex-1 flex flex-col min-h-0">
         <CardHeader>
           <CardTitle>智能問答</CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 p-0">
-          <ScrollArea className="h-full">
+        <CardContent className="flex-1 flex flex-col min-h-0 p-0">
+          <ScrollArea className="flex-1 min-h-0">
             <div className="p-4 space-y-4">
               {messages.map((msg, index) => (
                 <div
