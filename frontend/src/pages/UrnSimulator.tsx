@@ -273,25 +273,28 @@ const UrnSimulator = () => {
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
-                          variant={"outline"}
+                          variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
                             !formData.birth_date && "text-muted-foreground"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.birth_date ? formData.birth_date : <span>選擇日期</span>}
+                          {formData.birth_date ? (
+                            format(new Date(formData.birth_date), "yyyy年MM月dd日")
+                          ) : (
+                            <span>請選擇日期</span>
+                          )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={formData.birth_date ? new Date(formData.birth_date) : undefined}
                           onSelect={(date) => handleDateChange('birth_date', date)}
+                          disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                           initialFocus
-                          captionLayout="dropdown-buttons"
-                          fromYear={1900}
-                          toYear={new Date().getFullYear()}
+                          className="pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -301,25 +304,28 @@ const UrnSimulator = () => {
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
-                          variant={"outline"}
+                          variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
                             !formData.death_date && "text-muted-foreground"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.death_date ? formData.death_date : <span>選擇日期</span>}
+                          {formData.death_date ? (
+                            format(new Date(formData.death_date), "yyyy年MM月dd日")
+                          ) : (
+                            <span>請選擇日期</span>
+                          )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={formData.death_date ? new Date(formData.death_date) : undefined}
                           onSelect={(date) => handleDateChange('death_date', date)}
+                          disabled={(date) => date > new Date()}
                           initialFocus
-                          captionLayout="dropdown-buttons"
-                          fromYear={1900}
-                          toYear={new Date().getFullYear()}
+                          className="pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
