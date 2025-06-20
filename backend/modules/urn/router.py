@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 import os
+import base64
 from uuid import uuid4
 from PIL import Image, ImageDraw, ImageFont
 from .layout_config import URN_LAYOUTS
@@ -8,10 +9,9 @@ from .layout_config import URN_LAYOUTS
 router = APIRouter()
 
 # 📂 圖片路徑
-BASE_DIR = os.path.dirname(__file__)
-URN_PHOTO_DIR = os.path.join(BASE_DIR, "../../uploads/urn_photos")
-PORTRAIT_DIR = os.path.join(BASE_DIR, "../../uploads/urn_portraits")
-DESIGN_DIR = os.path.join(BASE_DIR, "../../uploads/urn_designs")
+URN_PHOTO_DIR = "./uploads/urn_photos"  
+PORTRAIT_DIR = "./uploads/urn_portraits"
+DESIGN_DIR = "./uploads/urn_designs"
 
 os.makedirs(URN_PHOTO_DIR, exist_ok=True)
 os.makedirs(PORTRAIT_DIR, exist_ok=True)
@@ -45,15 +45,15 @@ def save_file(file: UploadFile, target_dir: str, custom_name: str = None, allowe
     return safe_name
 
 # ✅ 產生模擬圖
-def generate_design_image(urn_path, portrait_path, name, birth_date, death_date, output_path):
-    base = Image.open(urn_path).convert("RGBA").resize((600, 800))
+def generate_design_image(urn_path, portrait_path, name, birth_date, death_date):
+    base = Image.open(urn_path).convert("RGBA").resize((800, 800))
     urn_filename = os.path.basename(urn_path).strip().lower()
     layout = URN_LAYOUTS.get(urn_filename)
     if not layout:
         raise ValueError(f"找不到樣式對應的 layout 設定: {urn_filename}")
 
     draw = ImageDraw.Draw(base)
-    font_path = os.path.join(BASE_DIR, "../../fonts/msjh.ttc")
+    font_path = "./uploads/urn_fonts/msjh.ttc"
     font = ImageFont.truetype(font_path, 28)
 
     # ✅ 遺像轉黑白 + 遮罩
@@ -82,12 +82,18 @@ def generate_design_image(urn_path, portrait_path, name, birth_date, death_date,
     draw_vertical(f"歿於{death_cn}", layout["right_text_x"], layout["text_top_y"])
     draw_vertical(f"{name}靈骨", layout["center_text"]["x"], layout["center_text"]["y"])
 
-    base.save(output_path)
+    # 將圖片轉換為 base64
+    import io
+    buffer = io.BytesIO()
+    base.save(buffer, format='PNG')
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    
+    return image_base64
 
 # ✅ 上傳與合成 API
 @router.post("/urns", tags=["骨灰罈"])
 async def create_urn(
-    name: str = Form(...),
     deceased_name: str = Form(...),
     birth_date: str = Form(...),
     death_date: str = Form(...),
@@ -95,34 +101,31 @@ async def create_urn(
     portrait_photo: UploadFile = File(...)
 ):
     urn_path = os.path.join(URN_PHOTO_DIR, urn_photo_filename)
+    
     if not os.path.exists(urn_path):
         raise HTTPException(status_code=404, detail="骨灰罈樣式圖片不存在")
 
     portrait_filename = save_file(portrait_photo, PORTRAIT_DIR, custom_name=deceased_name)
     portrait_path = os.path.join(PORTRAIT_DIR, portrait_filename)
 
-    design_filename = f"{name}.png"
-    design_path = os.path.join(DESIGN_DIR, design_filename)
-
-    generate_design_image(
+    # 生成 base64 圖片
+    image_base64 = generate_design_image(
         urn_path=urn_path,
         portrait_path=portrait_path,
         name=deceased_name,
         birth_date=birth_date,
-        death_date=death_date,
-        output_path=design_path
+        death_date=death_date
     )
 
     return JSONResponse({
         "message": "骨灰罈模擬圖已建立",
         "data": {
-            "name": name,
             "deceased_name": deceased_name,
             "birth_date": birth_date,
             "death_date": death_date,
             "urn_photo_url": f"/static/urn_photos/{urn_photo_filename}",
             "portrait_photo_url": f"/static/urn_portraits/{portrait_filename}",
-            "design_image_url": f"/static/urn_designs/{design_filename}"
+            "design_image_base64": image_base64
         }
     })
 
