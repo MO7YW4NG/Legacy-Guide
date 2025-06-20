@@ -13,7 +13,7 @@ import Overview from "./pages/Overview";
 import NotFound from "./pages/NotFound";
 import Chatbot from "./pages/Chatbot";
 import UrnSimulator from "./pages/UrnSimulator";
-import ObituaryWriter from "./pages/ObituaryWriter";
+// import ObituaryWriter from "./pages/ObituaryWriter";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +32,7 @@ const App = () => (
             <Route path="/overview" element={<Overview />} />
             <Route path="/chatbot" element={<Chatbot />} />
             <Route path="/urn-simulator" element={<UrnSimulator />} />
-            <Route path="/obituary-writer" element={<ObituaryWriter />} />
+            {/* <Route path="/obituary-writer" element={<ObituaryWriter />} /> */}
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

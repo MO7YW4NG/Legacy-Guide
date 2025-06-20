@@ -9,7 +9,7 @@ const pageTitles: { [key: string]: string } = {
   '/lunar-calendar': '農民曆查詢',
   '/ritual-calendar': '祭祀日曆',
   '/urn-simulator': '骨灰罈模擬器',
-  '/obituary-writer': '訃聞撰寫',
+  // '/obituary-writer': '訃聞撰寫',
   '/chatbot': '智能問答',
 };
 

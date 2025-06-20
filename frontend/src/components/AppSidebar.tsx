@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -11,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Home, ClipboardList, BookOpen, Heart, Calendar as CalendarIcon, Bot, Package, FileText } from "lucide-react";
+import { Home, ClipboardList, BookOpen, Heart, Bot, Package, FileText } from "lucide-react";
 
 const menuItems = [
   { to: "/", label: "首頁", icon: Home },
@@ -19,7 +18,7 @@ const menuItems = [
   { to: "/lunar-calendar", label: "農民曆查詢", icon: BookOpen },
   { to: "/ritual-calendar", label: "祭祀日曆", icon: Heart },
   { to: "/urn-simulator", label: "骨灰罈模擬", icon: Package },
-  { to: "/obituary-writer", label: "訃聞撰寫", icon: FileText },
+  // { to: "/obituary-writer", label: "訃聞撰寫", icon: FileText },
   { to: "/chatbot", label: "智能問答", icon: Bot },
 ];
 
@@ -29,7 +28,7 @@ const AppSidebar = () => {
       <SidebarContent>
         <SidebarHeader className="p-4 flex flex-row items-center group-data-[state=expanded]:justify-between group-data-[state=collapsed]:justify-center">
           <div className="flex items-center gap-2 group-data-[state=collapsed]:hidden">
-            <CalendarIcon className="w-8 h-8 text-vi-primary" />
+            <img src="/icon2.png" alt="Logo" className="w-9 h-9" />
             <h1 className="text-xl font-bold text-foreground">靈魂日曆</h1>
           </div>
           <SidebarTrigger />
