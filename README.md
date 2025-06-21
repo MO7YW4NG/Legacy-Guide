@@ -1,8 +1,8 @@
-# LegacyGuide (靈魂日曆) - AI-Powered Ritual Planning Platform
+# LegacyGuide (靈魂日曆)
 
 ## 1. Project Overview
 
-LegacyGuide (靈魂日曆) is an AI-powered digital platform designed as a value-added service for **Lungyen Life Service Corporation (龍巖)**. Its core purpose is to assist bereaved families by providing a personalized "soul calendar" and intelligent guidance for post-bereavement rituals and remembrance. The system integrates traditional customs, Lungyen's specific service data, and modern AI technology to offer a seamless, supportive, and culturally sensitive experience during a difficult time.
+LegacyGuide (靈魂日曆) is an AI-Powered chinese ritual planning platform designed as a value-added service for **Lungyen Life Service Corporation (龍巖)**. Its core purpose is to assist bereaved families by providing a personalized "soul calendar" and intelligent guidance for post-bereavement rituals and remembrance. The system integrates traditional customs, Lungyen's specific service data, and modern AI technology to offer a seamless, supportive, and culturally sensitive experience during a difficult time.
 
 This platform aims to:
 *   Automate the generation of important ritual dates based on the deceased's information.
@@ -22,10 +22,15 @@ This platform aims to:
 
 ## 3. Technology Stack
 
-*   **Frontend:** Gradio
-*   **Backend:** Python FastAPI
-*   **AI/ML:**
-    *   Large Language Models (LLMs) via API (Google Gemini)
-    *   Retrieval Augmented Generation (RAG)
-*   **Farmer's Almanac Engine:** Custom-built or integrated third-party library/API.
+*   **Frontend:**
+    *   **Framework:** React
+    *   **Language:** TypeScript
+    *   **Build Tool:** Vite
+    *   **Styling:** Tailwind CSS
+    *   **Component Library:** shadcn/ui
+*   **Backend:**
+    *   **Framework:** Python FastAPI
+    *   **AI/ML:**
+        *   Large Language Models (LLMs): Google Gemini
+        *   Retrieval Augmented Generation (RAG): LlamaIndex
 *   **Deployment:** Docker
